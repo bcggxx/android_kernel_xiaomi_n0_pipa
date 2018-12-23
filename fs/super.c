@@ -1271,9 +1271,27 @@ int vfs_get_tree(struct fs_context *fc)
 	struct super_block *sb;
 	int error;
 
-	error = legacy_get_tree(fc);
+	if (fc->fs_type->fs_flags & FS_REQUIRES_DEV && !fc->source)
+		return -ENOENT;
+
+	if (fc->root)
+		return -EBUSY;
+
+	/* Get the mountable root in fc->root, with a ref on the root and a ref
+	 * on the superblock.
+	 */
+	error = fc->ops->get_tree(fc);
 	if (error < 0)
 		return error;
+
+	if (!fc->root) {
+		pr_err("Filesystem %s get_tree() didn't set fc->root\n",
+		       fc->fs_type->name);
+		/* We don't know what the locking state of the superblock is -
+		 * if there is a superblock.
+		 */
+		BUG();
+	}
 
 	sb = fc->root->d_sb;
 	BUG_ON(!sb);
