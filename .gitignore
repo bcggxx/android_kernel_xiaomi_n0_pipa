@@ -137,8 +137,12 @@ all.config
 # fetched Android config fragments
 kernel/configs/android-*.cfg
 
-# Tech package directories
-#techpack/
+# build system
+tc/
 out/
-build.sh
-dtbo_build.sh
+toolchain/
+toolchains/
+anykernel/
+AnyKernel3/
+error.log
+Kernel_*
