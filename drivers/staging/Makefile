@@ -55,3 +55,4 @@ obj-$(CONFIG_XIL_AXIS_FIFO)	+= axis-fifo/
 obj-$(CONFIG_QCA_CLD_WLAN)	+= qcacld-3.0/
 obj-$(CONFIG_MI_RECLAIM)	+= mi-reclaim/
 obj-$(CONFIG_CAM_RECLAIM)	+= cam-reclaim/
+obj-$(CONFIG_BINDER_PRIO)	+= binder_prio/
