@@ -38,6 +38,7 @@
 #define ION_SECURE_HEAP_NAME	"secure_heap"
 #define ION_SECURE_DISPLAY_HEAP_NAME "secure_display"
 #define ION_AUDIO_HEAP_NAME    "audio"
+#define ION_CAMERA_HEAP_NAME   "camera"
 
 #define ION_IS_CACHED(__flags)  ((__flags) & ION_FLAG_CACHED)
 
@@ -370,6 +371,7 @@ size_t ion_heap_freelist_size(struct ion_heap *heap);
 struct ion_heap *ion_heap_create(struct ion_platform_heap *heap_data);
 
 struct ion_heap *ion_system_heap_create(struct ion_platform_heap *unused);
+struct ion_heap *ion_camera_heap_create(struct ion_platform_heap *heap);
 struct ion_heap *ion_system_contig_heap_create(struct ion_platform_heap *heap);
 
 struct ion_heap *ion_carveout_heap_create(struct ion_platform_heap *heap_data);
