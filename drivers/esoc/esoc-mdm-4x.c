@@ -1304,12 +1304,11 @@ static int last_modem_sfr_proc_open(struct inode *inode, struct file *file)
 	return single_open(file, last_modem_sfr_proc_show, NULL);
 }
 
-static const struct file_operations last_modem_sfr_file_ops = {
-	.owner   = THIS_MODULE,
-	.open    = last_modem_sfr_proc_open,
-	.read    = seq_read,
-	.llseek  = seq_lseek,
-	.release = single_release,
+static const struct proc_ops last_modem_sfr_proc_ops = {
+    .proc_open    = last_modem_sfr_proc_open,
+    .proc_read    = seq_read,
+    .proc_lseek   = seq_lseek,
+    .proc_release = single_release,
 };
 
 static struct platform_driver mdm_driver = {
@@ -1323,7 +1322,7 @@ static struct platform_driver mdm_driver = {
 
 static int __init mdm_register(void)
 {
-	last_modem_sfr_entry = proc_create("last_mcrash", S_IFREG | S_IRUGO, NULL, &last_modem_sfr_file_ops);
+        last_modem_sfr_entry = proc_create("last_mcrash", S_IFREG | S_IRUGO, NULL, &last_modem_sfr_proc_ops);
 	if (!last_modem_sfr_entry)
 		pr_err("pil: cannot create proc entry last_mcrash\n");
 
