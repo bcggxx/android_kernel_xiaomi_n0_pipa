@@ -104,19 +104,19 @@ static ssize_t perflock_records_write(struct file *file, const char __user *user
 	return count;
 }
 
-static const struct file_operations perflock_records_ops = {
-	.open           = perflock_records_open,
-	.read           = seq_read,
-	.write		= perflock_records_write,
-	.llseek         = seq_lseek,
-	.release        = single_release,
+static const struct proc_ops perflock_records_proc_ops = {
+    .proc_open    = perflock_records_open,
+    .proc_read    = seq_read,
+    .proc_write   = perflock_records_write,
+    .proc_lseek   = seq_lseek,
+    .proc_release = single_release,
 };
 
 static int __init perf_helper_init(void)
 {
 	struct proc_dir_entry *entry;
 
-	entry = proc_create("perflock_records", 0664, NULL, &perflock_records_ops);
+        entry = proc_create("perflock_records", 0664, NULL, &perflock_records_proc_ops);
 	if (!entry)
 		printk(KERN_ERR "%s: create perflock_records node failed\n");
 
