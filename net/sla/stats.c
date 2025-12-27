@@ -90,16 +90,13 @@ static int fops_u64_open(struct inode *inode, struct file *filp)
     return simple_attr_open(inode, filp, procfs_u64_get, procfs_u64_set, "%llu\n");
 }
 
-static const struct file_operations fops_u64 =
-{
-    .owner   = THIS_MODULE,
-    .open    = fops_u64_open,
-    .release = simple_attr_release,
-    .read    = simple_attr_read,
-    .write   = simple_attr_write,
-    .llseek  = generic_file_llseek,
+static const struct proc_ops fops_u64_proc_ops = {
+    .proc_open    = fops_u64_open,
+    .proc_read    = simple_attr_read,
+    .proc_write   = simple_attr_write,
+    .proc_lseek   = generic_file_llseek,
+    .proc_release = simple_attr_release,
 };
-
 
 /* dir */
 static struct proc_dir_entry *sla_dir;
@@ -498,14 +495,11 @@ int stats_open(struct inode *inode, struct file *file)
     return simple_open(inode, file);
 }
 
-
-static const struct file_operations stats_fops =
-{
-    .owner = THIS_MODULE,
-    .open = stats_open,
-    .read = stats_read,
-    .llseek = default_llseek,
-    .mmap = stats_map,
+static const struct proc_ops stats_proc_ops = {
+    .proc_open    = stats_open,
+    .proc_read    = stats_read,
+    .proc_lseek   = default_llseek,
+    .proc_mmap    = stats_map,
 };
 
 static void sla_stats_data_init(struct sla_interface_stats *p)
@@ -613,8 +607,7 @@ static int sla_interface_start(const char *interface_name)
         SetPageReserved(virt_to_page(((u8 *)new_interface->mmap_struct)+offset)); //Set the segment memory to reserved
 
     
-
-    new_interface->mmap_file = proc_create_data(mmap_file_name, 0644, sla_dir, &stats_fops, new_interface->mmap_struct);
+    new_interface->mmap_file = proc_create_data(mmap_file_name, 0644, sla_dir, &stats_proc_ops, new_interface->mmap_struct);
 
     if (!new_interface->mmap_file)
     {
@@ -626,7 +619,7 @@ static int sla_interface_start(const char *interface_name)
 
 
     new_interface->total_trfc = 0;
-    new_interface->total_stats_file = proc_create_data(total_stats_file_name, 0644, sla_dir, &fops_u64, &new_interface->total_trfc);
+    new_interface->total_stats_file = proc_create_data(total_stats_file_name, 0644, sla_dir, &fops_u64_proc_ops, &new_interface->total_trfc);
 
     if (!new_interface->total_stats_file)
     {
@@ -919,17 +912,13 @@ static ssize_t config_file_write(struct file *filp, const char __user *buffer,  
     return count;
 }
 
-
-static const struct file_operations config_fops =
-{
-    .owner = THIS_MODULE,
-    .open = config_file_open,
-    .read = seq_read,
-    .write = config_file_write,
-    .llseek = seq_lseek,
-    .release = single_release,
+static const struct proc_ops config_proc_ops = {
+    .proc_open    = config_file_open,
+    .proc_read    = seq_read,
+    .proc_write   = config_file_write,
+    .proc_lseek   = seq_lseek,
+    .proc_release = single_release,
 };
-
 
 static int __init sla_static_collector_init(void)
 {
@@ -964,7 +953,7 @@ static int __init sla_static_collector_init(void)
     config_data.limit_time = LIMIT_TIME_DEFAULT;
 
 
-    config_file = proc_create_data("config", 0644, sla_dir, &config_fops, &config_data);
+    config_file = proc_create_data("config", 0644, sla_dir, &config_proc_ops, &config_data);
 
     if (!config_file)
     {
