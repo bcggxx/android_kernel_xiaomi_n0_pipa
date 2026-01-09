@@ -27,33 +27,14 @@ obj-$(CONFIG_KSU) += kernelsu.o
 KDIR := $(KDIR)
 MDIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
-# Check if this is a git repository
-# Try to detect Git repo intelligently
-GIT_ROOT := $(shell cd $(MDIR) && git rev-parse --show-toplevel 2>/dev/null)
+# Hardcoded KernelSU version (no git required)
+KSU_GIT_VERSION := 2424
+KSU_GIT_BRANCH := main
 
-ifneq ($(GIT_ROOT),)
-# Successfully found a Git repository containing this directory
-$(shell cd $(GIT_ROOT) && [ -f .git/shallow ] && git fetch --unshallow)
-KSU_GIT_VERSION := $(shell cd $(GIT_ROOT) && git rev-list --count HEAD)
-KSU_GIT_BRANCH := $(shell cd $(GIT_ROOT) && git rev-parse --abbrev-ref HEAD)
-KSU_GIT_VERSION_VALID := 1
-$(info -- KernelSU: Git repo detected at $(GIT_ROOT))
-endif
-
-# Calculate version if git version is available
-ifdef KSU_GIT_VERSION_VALID
-# ksu_version: major * 10000 + git version + 200 for historical reasons
+# ksu_version: major * 10000 + git version
 $(eval KSU_VERSION=$(shell expr 30000 + $(KSU_GIT_VERSION)))
 ccflags-y += -DKSU_VERSION=$(KSU_VERSION)
 ccflags-y += -DKSU_BRANCH=\"$(KSU_GIT_BRANCH)\"
-$(info -- KernelSU version: $(KSU_VERSION))
-$(info -- KernelSU branch: $(KSU_GIT_BRANCH))
-else
-# If there is no .git directory, use default version
-$(warning "KSU_GIT_VERSION not defined! It is better to make KernelSU a git repository!")
-ccflags-y += -DKSU_VERSION=32302
-ccflags-y += -DKSU_BRANCH=\"-\"
-endif
 
 # Checks hooks state
 ifeq ($(CONFIG_KSU_MANUAL_HOOK), y)
