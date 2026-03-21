@@ -3037,6 +3037,98 @@ And public attribution of xiaomi platforms(like pipa and so and)
         status = "ok";
 };
 
+/*
+ * Fix 1: Add missing display power rail GPIO default pinctrl states.
+ *
+ * Present in stock DTBO (fragment@72, targeting tlmm) but absent in LOS.
+ * gpio61 = AVDD enable, gpio71 = VCI enable.
+ * Without these states the GPIOs are undefined at boot, causing
+ * non-deterministic power sequencing and display glitches on some units.
+ */
+&tlmm {
+	display_panel_avdd_default: display_panel_avdd_default {
+		mux {
+			pins = "gpio61";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio61";
+			drive-strength = <8>;
+			bias-disable;
+			output-high;
+		};
+	};
+
+	display_panel_vci_default: display_panel_vci_default {
+		mux {
+			pins = "gpio71";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio71";
+			drive-strength = <8>;
+			bias-disable;
+			output-high;
+		};
+	};
+};
+
+/*
+ * Fix 2: Add missing dsi_panel_pwr_supply_vci_l10a supply node.
+ *
+ * Present in stock DTBO fragment@73 but absent in LOS.
+ * Voltages converted from stock hex values:
+ *   vddio: 0x1b7740 = 1800000 uV (1.8V)
+ *   dvdd:  0x124f80 = 1200000 uV (1.2V)
+ *   vci:   0x2dc6c0 = 3000000 uV (3.0V)
+ */
+&mdss_mdp {
+	dsi_panel_pwr_supply_vci_l10a: dsi_panel_pwr_supply_vci_l10a {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		qcom,panel-supply-entry@0 {
+			reg = <0>;
+			qcom,supply-name = "vddio";
+			qcom,supply-min-voltage = <1800000>;
+			qcom,supply-max-voltage = <1800000>;
+			qcom,supply-enable-load = <62000>;
+			qcom,supply-disable-load = <80>;
+			qcom,supply-pre-on-sleep = <0>;
+			qcom,supply-pre-off-sleep = <2>;
+			qcom,supply-post-on-sleep = <3>;
+			qcom,supply-post-off-sleep = <2>;
+		};
+
+		qcom,panel-supply-entry@1 {
+			reg = <1>;
+			qcom,supply-name = "dvdd";
+			qcom,supply-min-voltage = <1200000>;
+			qcom,supply-max-voltage = <1200000>;
+			qcom,supply-enable-load = <62000>;
+			qcom,supply-disable-load = <80>;
+			qcom,supply-pre-on-sleep = <0>;
+			qcom,supply-pre-off-sleep = <0>;
+			qcom,supply-post-on-sleep = <3>;
+			qcom,supply-post-off-sleep = <0>;
+		};
+
+		qcom,panel-supply-entry@2 {
+			reg = <2>;
+			qcom,supply-name = "vci";
+			qcom,supply-min-voltage = <3000000>;
+			qcom,supply-max-voltage = <3000000>;
+			qcom,supply-enable-load = <100000>;
+			qcom,supply-disable-load = <100>;
+			qcom,supply-pre-on-sleep = <0>;
+			qcom,supply-pre-off-sleep = <1>;
+			qcom,supply-post-on-sleep = <10>;
+			qcom,supply-post-off-sleep = <2>;
+		};
+	};
+};
 
 &sde_dsi {
 	/delete-property/ vdd-supply;

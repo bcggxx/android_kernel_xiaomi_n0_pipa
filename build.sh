@@ -43,7 +43,7 @@ fi
 
     make $MAKE_ARGS pipa_defconfig
 
-    make $MAKE_ARGS -j$(nproc --all) 2> >(tee -a error.log >&2)
+    make $MAKE_ARGS dtb -j$(nproc --all) 2> >(tee -a error.log >&2)
 
     if [ -f "out/arch/arm64/boot/Image" ]; then
         echo "The file [out/arch/arm64/boot/Image] exists. Built successfully."
