@@ -3,7 +3,8 @@
 # Ensure the script exits on error
 set -e
 
-TOOLCHAIN_PATH=$HOME/tc/bin
+RESOURCE_DIR="$("${CC:-clang}" --print-resource-dir)"
+TOOLCHAIN_PATH="$(dirname "$(dirname "$(dirname "$RESOURCE_DIR")")")"
 GIT_COMMIT_ID=$(git rev-parse --short=8 HEAD)
 
 if [ ! -d $TOOLCHAIN_PATH ]; then
