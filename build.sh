@@ -60,7 +60,8 @@ fi
     cp out/arch/arm64/boot/dtbo.img anykernel/kernels/
 
     cd anykernel
-    ZIP_FILENAME=Kernel_n0_pipa_anykernel3_${GIT_COMMIT_ID}.zip
+    timestamp=$(date +"%Y%m%d_%H%M%S")
+    ZIP_FILENAME=Kernel_n0_pipa_anykernel3_${timestamp}.zip
     zip -r9 $ZIP_FILENAME ./* -x .git .gitignore out/ ./*.zip
     mv $ZIP_FILENAME ../
     cd ..
