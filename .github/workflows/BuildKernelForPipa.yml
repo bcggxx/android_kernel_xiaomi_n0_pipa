@@ -17,15 +17,27 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo apt update
-          sudo apt install -y \
-            git curl wget \
-            build-essential \
-            clang lld llvm \
-            gcc-aarch64-linux-gnu \
-            bc bison flex \
-            zip unzip \
-            python3 ccache
+          sudo apt update && sudo apt upgrade -y
+
+          sudo apt install nano vim wget curl git ccache \
+          automake flex lzop bison gperf build-essential zip \
+          curl zlib1g-dev g++-multilib libxml2-utils bzip2 \
+          libbz2-dev libbz2-1.0 libghc-bzlib-dev squashfs-tools \
+          pngcrush schedtool dpkg-dev liblz4-tool make optipng \
+          maven libssl-dev pwgen libswitch-perl policycoreutils \
+          minicom libxml-sax-base-perl libxml-simple-perl bc \
+          libc6-dev-i386 lib32ncurses5-dev libx11-dev lib32z-dev \
+          libgl1-mesa-dev xsltproc unzip device-tree-compiler \
+          wget curl cpio p7zip p7zip-full libtinfo5 -y
+
+          sudo apt install python3 python-is-python3 -y          
+
+      - name: Install AOSP-Clang
+        run: |
+          mkdir -p ${{ github.workspace }}/clang
+          wget -O clang.tar.gz "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/mirror-goog-main-llvm-toolchain-source/clang-r547379.tar.gz"
+          tar -xzf clang.tar.gz -C ${{ github.workspace }}/clang
+          echo "${{ github.workspace }}/clang/bin" >> $GITHUB_PATH
 
       - name: Grant execute permission for build.sh
         run: chmod +x build.sh
