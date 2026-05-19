@@ -13,7 +13,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install dependencies
         run: |
@@ -35,7 +35,7 @@ jobs:
       - name: Install AOSP-Clang
         run: |
           mkdir -p ${{ github.workspace }}/clang
-          wget -O clang.tar.gz "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/mirror-goog-main-llvm-toolchain-source/clang-r547379.tar.gz"
+          wget -c --tries=10 --waitretry=5 --retry-on-host-error --retry-connrefused -O clang.tar.gz "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/mirror-goog-main-llvm-toolchain-source/clang-r547379.tar.gz"
           tar -xzf clang.tar.gz -C ${{ github.workspace }}/clang
           echo "${{ github.workspace }}/clang/bin" >> $GITHUB_PATH
 
