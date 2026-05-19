@@ -19,6 +19,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.branch }}
 
       - name: Setup ccache
         uses: actions/cache@v5
@@ -28,7 +30,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-ccache-${{ inputs.branch }}-
 
-      - name: Install dependencies
+      - name: Install Dependencies
         run: |
           sudo apt update
 
@@ -43,13 +45,7 @@ jobs:
           libgl1-mesa-dev xsltproc unzip device-tree-compiler \
           wget curl cpio p7zip p7zip-full libtinfo6 -y
 
-          sudo apt install python3 python-is-python3 -y          
-
-      - name: Configure ccache
-        run: |
-          export CCACHE_DIR=~/.cache/ccache
-          ccache -M 20G
-          ccache -z
+          sudo apt install python3 python-is-python3 -y
 
       - name: Install AOSP-Clang
         run: |
@@ -61,22 +57,22 @@ jobs:
       - name: Grant execute permission for build.sh
         run: chmod +x build.sh
 
-      - name: Run build script
+      - name: Build Kernel
         env:
           CCACHE_DIR: ~/.cache/ccache
           CCACHE_COMPILERCHECK: none
         run: ./build.sh
 
-      - name: Print ccache statistics
-        run: ccache -s
-
-      - name: Upload Artifact
+      - name: Upload Kernel Zip
         uses: actions/upload-artifact@v7
         with:
-          name: kernel-${{ inputs.branch }}-${{ github.run_id }}
-          path: |
-            AnyKernel3/*.zip
-            out/arch/arm64/boot/Image
-            out/arch/arm64/boot/dtbo.img
-            out/arch/arm64/boot/dtb
-          compression-level: 9
+          name: Kernel-Pipa-${{ github.run_number }}
+          path: '*.zip'
+          if-no-files-found: error
+
+      - name: Upload Error Log
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-error-log
+          path: error.log
