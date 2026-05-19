@@ -146,3 +146,5 @@ anykernel/
 AnyKernel3/
 error.log
 Kernel_*
+kernelsu/
+drivers/kernelsu/
