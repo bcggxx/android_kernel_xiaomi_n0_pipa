@@ -26,9 +26,9 @@ jobs:
           pngcrush schedtool dpkg-dev liblz4-tool make optipng \
           maven libssl-dev pwgen libswitch-perl policycoreutils \
           minicom libxml-sax-base-perl libxml-simple-perl bc \
-          libc6-dev-i386 lib32ncurses5-dev libx11-dev lib32z-dev \
+          libc6-dev-i386 lib32ncurses6-dev libx11-dev lib32z-dev \
           libgl1-mesa-dev xsltproc unzip device-tree-compiler \
-          wget curl cpio p7zip p7zip-full libtinfo5 -y
+          wget curl cpio p7zip p7zip-full libtinfo6 -y
 
           sudo apt install python3 python-is-python3 -y          
 
