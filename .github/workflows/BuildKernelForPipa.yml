@@ -1,0 +1,34 @@
+name: Build Kernel For Pipa
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - staging
+      - pipa-bpf
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            git curl wget \
+            build-essential \
+            clang lld llvm \
+            gcc-aarch64-linux-gnu \
+            bc bison flex \
+            zip unzip \
+            python3 ccache
+
+      - name: Grant execute permission for build.sh
+        run: chmod +x build.sh
+
+      - name: Run build script
+        run: ./build.sh
