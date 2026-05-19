@@ -2,10 +2,15 @@ name: Build Kernel For Pipa
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - staging
-      - pipa-bpf
+    inputs:
+      branch:
+        description: '请选择要编译的分支/Please select the branch to build.'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - pipa-bpf
 
 jobs:
   build:
@@ -14,6 +19,17 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+
+      - name: Setup ccache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.ccache
+            ~/.cache/ccache
+          key: ${{ runner.os }}-ccache-${{ inputs.branch }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-ccache-${{ inputs.branch }}-
+            ${{ runner.os }}-ccache-
 
       - name: Install dependencies
         run: |
