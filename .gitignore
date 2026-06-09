@@ -86,6 +86,9 @@ modules.builtin
 !.mailmap
 !.cocciconfig
 !.clang-format
+!.github/
+!.github/workflows/
+!.github/workflows/*
 
 #
 # Generated include files
@@ -146,3 +149,6 @@ anykernel/
 AnyKernel3/
 error.log
 Kernel_*
+kernelsu/
+drivers/kernelsu/
+KernelSU
