@@ -1,0 +1,73 @@
+name: Build Kernel For Pipa
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: '请选择要编译的分支/Please select the branch to build.'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - pipa-bpf
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.branch }}
+
+      - name: Setup ccache
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/ccache
+          key: ${{ runner.os }}-ccache-${{ inputs.branch }}-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-ccache-${{ inputs.branch }}-
+
+      - name: Install Dependencies
+        run: |
+          sudo apt update
+
+          sudo apt install nano vim wget curl git ccache \
+          automake flex lzop bison gperf build-essential zip \
+          curl zlib1g-dev g++-multilib libxml2-utils bzip2 \
+          libbz2-dev libbz2-1.0 libghc-bzlib-dev squashfs-tools \
+          pngcrush schedtool dpkg-dev liblz4-tool make optipng \
+          maven libssl-dev pwgen libswitch-perl policycoreutils \
+          minicom libxml-sax-base-perl libxml-simple-perl bc \
+          libc6-dev-i386 lib32ncurses-dev libx11-dev lib32z-dev \
+          libgl1-mesa-dev xsltproc unzip device-tree-compiler \
+          cpio p7zip p7zip-full libtinfo6 -y
+
+          sudo apt install python3 python-is-python3 -y
+
+      - name: Install AOSP-Clang
+        run: |
+          git clone --depth=1 https://github.com/bcggxx/AOSP-Clang-Mirror.git ${{ github.workspace }}/clang
+          echo "${{ github.workspace }}/clang/bin" >> $GITHUB_PATH
+
+      - name: Grant execute permission for build.sh
+        run: chmod +x build.sh
+
+      - name: Build Kernel
+        run: ./build.sh
+
+      - name: Upload Kernel Zip
+        uses: actions/upload-artifact@v7
+        with:
+          name: Kernel-Pipa-${{ github.run_number }}
+          path: '*.zip'
+          if-no-files-found: error
+
+      - name: Upload Error Log
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-error-log
+          path: error.log
