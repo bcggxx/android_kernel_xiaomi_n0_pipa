@@ -450,7 +450,7 @@ static int get_valid_pullup(int pull_up)
 static int smb5_configure_internal_pull(struct smb_charger *chg, int type,
 					int pull)
 {
-	int rc;
+	int rc = 0;
 	int shift = type * 2;
 	u8 mask = INTERNAL_PULL_UP_MASK << shift;
 	u8 val = pull << shift;
@@ -1320,7 +1320,7 @@ static int smb5_parse_sdam(struct smb5 *chip, struct device_node *node)
 	struct smb_charger *chg = &chip->chg;
 	struct property *prop;
 	const char *name;
-	int rc;
+	int rc = 0;
 	u32 base;
 	u8 type;
 
@@ -2225,7 +2225,7 @@ static int smb5_usb_main_set_prop(struct power_supply *psy,
 static int smb5_usb_main_prop_is_writeable(struct power_supply *psy,
 				enum power_supply_property psp)
 {
-	int rc;
+	int rc = 0;
 
 	switch (psp) {
 	case POWER_SUPPLY_PROP_TOGGLE_STAT:
@@ -2410,7 +2410,7 @@ static int smb5_init_dc_psy(struct smb5 *chip)
 static int smb5_get_prop_input_voltage_regulation(struct smb_charger *chg,
 					union power_supply_propval *val)
 {
-	int rc;
+	int rc = 0;
 
 	chg->idtp_psy = power_supply_get_by_name("idt");
 	if (chg->idtp_psy) {
@@ -2436,7 +2436,7 @@ static int smb5_get_prop_input_voltage_regulation(struct smb_charger *chg,
 static int smb5_get_prop_input_voltage_vrect(struct smb_charger *chg,
 					union power_supply_propval *val)
 {
-	int rc;
+	int rc = 0;
 
 	chg->idtp_psy = power_supply_get_by_name("idt");
 	if (chg->idtp_psy) {
@@ -2463,7 +2463,7 @@ static int smb5_get_prop_input_voltage_vrect(struct smb_charger *chg,
 static int smb5_get_prop_rx_iout(struct smb_charger *chg,
 					union power_supply_propval *val)
 {
-	int rc;
+	int rc = 0;
 
 	chg->idtp_psy = power_supply_get_by_name("idt");
 	if (chg->idtp_psy) {
@@ -2488,7 +2488,7 @@ static int smb5_get_prop_rx_iout(struct smb_charger *chg,
 static int smb5_get_prop_wireless_signal(struct smb_charger *chg,
 				union power_supply_propval *val)
 {
-	int rc;
+	int rc = 0;
 
 	chg->idtp_psy = power_supply_get_by_name("idt");
 	if (chg->idtp_psy) {
@@ -2511,7 +2511,7 @@ static int smb5_get_prop_wireless_signal(struct smb_charger *chg,
 static int smb5_set_prop_input_voltage_regulation(struct smb_charger *chg,
 				const union power_supply_propval *val)
 {
-	int rc;
+	int rc = 0;
 
 	chg->idtp_psy = power_supply_get_by_name("idt");
 	if (chg->idtp_psy) {
@@ -2581,7 +2581,7 @@ static int smb5_get_prop_reverse_pen_soc(struct smb_charger *chg,
 static int smb5_set_prop_div2_mode(struct smb_charger *chg,
 				const union power_supply_propval *val)
 {
-	int rc;
+	int rc = 0;
 
 	dev_info(chg->dev, "%s: set mode is = %d\n",
 				__func__, val->intval);
@@ -2629,7 +2629,7 @@ static int smb5_get_prop_div2_mode(struct smb_charger *chg,
 static int smb5_set_prop_reverse_chg_mode(struct smb_charger *chg,
 				const union power_supply_propval *val)
 {
-	int rc;
+	int rc = 0;
 
 	dev_info(chg->dev, "%s: set mode is = %d\n",
 				__func__, val->intval);
@@ -2655,7 +2655,7 @@ static int smb5_set_prop_reverse_chg_mode(struct smb_charger *chg,
 static int smb5_set_prop_otg_mode(struct smb_charger *chg,
 				const union power_supply_propval *val)
 {
-	int rc;
+	int rc = 0;
 
 	dev_info(chg->dev, "%s: set mode is = %d\n",
 				__func__, val->intval);
@@ -2681,7 +2681,7 @@ static int smb5_set_prop_otg_mode(struct smb_charger *chg,
 static int smb5_get_prop_reverse_chg_mode(struct smb_charger *chg,
 				union power_supply_propval *val)
 {
-	int rc;
+	int rc = 0;
 
 	chg->idtp_psy = power_supply_get_by_name("idt");
 	if (chg->idtp_psy) {
@@ -2707,7 +2707,7 @@ static int smb5_get_prop_reverse_chg_mode(struct smb_charger *chg,
 static int smb5_get_prop_wirless_chip_ok(struct smb_charger *chg,
 				union power_supply_propval *val)
 {
-	int rc;
+	int rc = 0;
 
 	chg->idtp_psy = power_supply_get_by_name("idt");
 	if (chg->idtp_psy) {
@@ -3559,7 +3559,7 @@ static int smb5_init_vconn_regulator(struct smb5 *chip)
 static int smb5_configure_typec(struct smb_charger *chg)
 {
 	union power_supply_propval pval = {0, };
-	int rc;
+	int rc = 0;
 	u8 val = 0;
 
 	rc = smblib_read(chg, LEGACY_CABLE_STATUS_REG, &val);
@@ -3686,7 +3686,7 @@ static int smb5_configure_typec(struct smb_charger *chg)
 
 static int smb5_configure_micro_usb(struct smb_charger *chg)
 {
-	int rc;
+	int rc = 0;
 
 	/* For micro USB connector, use extcon by default */
 	chg->use_extcon = true;
@@ -3835,7 +3835,7 @@ static int smb5_configure_iterm_thresholds(struct smb5 *chip)
 
 static int smb5_configure_mitigation(struct smb_charger *chg)
 {
-	int rc;
+	int rc = 0;
 	u8 chan = 0, src_cfg = 0;
 
 	if (!chg->hw_die_temp_mitigation && !chg->hw_connector_mitigation &&

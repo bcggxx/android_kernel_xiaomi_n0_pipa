@@ -306,10 +306,11 @@ static ssize_t gpio_set_show(struct device *dev, struct device_attribute *attr,
 static ssize_t gpio_set_store(struct device *dev, struct device_attribute *attr,
 			      const char *buf, size_t count)
 {
-	int gpio_pin;
-	int gpio_value;
+	int gpio_pin = 0;
+	int gpio_value = 0;
 	char delim[] = " ";
-	char *str = kstrdup(buf, GFP_KERNEL);
+	char *s = kstrdup(buf, GFP_KERNEL);
+	char *str = s;
 	char *token = NULL;
 
 	if (!str)
@@ -327,8 +328,8 @@ static ssize_t gpio_set_store(struct device *dev, struct device_attribute *attr,
 
 	dbgprint(DEBUG_LEVEL, "gpio set %d %d\n", gpio_pin, gpio_value);
 
-	if (str)
-		kfree(str);
+	if (s)
+		kfree(s);
 
 	Nanosic_GPIO_set(gpio_pin, gpio_value > 0 ? true : false);
 

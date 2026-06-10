@@ -142,7 +142,7 @@ tc/
 out/
 toolchain/
 toolchains/
-anykernel/
-AnyKernel3/
-error.log
+anykernel
+AnyKernel3
+*.log
 Kernel_*

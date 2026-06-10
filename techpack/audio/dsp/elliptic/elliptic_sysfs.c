@@ -115,7 +115,7 @@ static ssize_t calibration_show_core(struct device *dev,
 	struct device_attribute *attr, char *buf, int pretty)
 {
 	ssize_t result;
-	int length;
+	int length = 0;
 	int i;
 	uint8_t *caldata;
 
@@ -172,7 +172,7 @@ static ssize_t calibration_v2_show_core(struct device *dev,
 	struct device_attribute *attr, char *buf, int pretty)
 {
 	ssize_t result;
-	int length;
+	int length = 0;
 	int i;
 	uint8_t *caldata;
 
@@ -239,7 +239,7 @@ static ssize_t diagnostics_show_core(struct device *dev,
 	struct device_attribute *attr, char *buf, int pretty)
 {
 	ssize_t result;
-	int length;
+	int length = 0;
 	uint32_t *data32;
 	int i;
 
@@ -291,7 +291,7 @@ static ssize_t ml_show_core(struct device *dev,
 	struct device_attribute *attr, char *buf, int pretty)
 {
 	ssize_t result;
-	int length;
+	int length = 0;
 	int i;
 	uint32_t *mldata;
 
@@ -355,7 +355,7 @@ static ssize_t version_show_core(struct device *dev,
 {
 	ssize_t result;
 	struct elliptic_engine_version_info *version_info;
-	int length;
+	int length = 0;
 
 	struct elliptic_shared_data_block *version_obj =
 		elliptic_get_shared_obj(ELLIPTIC_OBJ_ID_VERSION_INFO);
@@ -407,7 +407,7 @@ static ssize_t version_show(struct device *dev,
 static ssize_t branch_show_core(struct device *dev,
 	struct device_attribute *attr, char *buf, int pretty)
 {
-	int length;
+	int length = 0;
 
 	struct elliptic_shared_data_block *branch_obj =
 		elliptic_get_shared_obj(ELLIPTIC_OBJ_ID_BRANCH_INFO);
@@ -441,7 +441,7 @@ static ssize_t branch_show(struct device *dev,
 static ssize_t tag_show_core(struct device *dev,
 	struct device_attribute *attr, char *buf, int pretty)
 {
-	int length;
+	int length = 0;
 
 	struct elliptic_shared_data_block *tag_obj =
 		elliptic_get_shared_obj(ELLIPTIC_OBJ_ID_TAG_INFO);
@@ -477,7 +477,7 @@ static ssize_t cache_show(char *buf, int pretty)
 	struct elliptic_system_configuration_parameters_cache *cache =
 				&elliptic_system_configuration_cache;
 
-	int length;
+	int length = 0;
 
 	length = snprintf(buf, PAGE_SIZE - 1, "Cache:\n");
 	length += snprintf(buf + length, PAGE_SIZE - 1, "    mi:%d\n",
@@ -503,7 +503,7 @@ static ssize_t cache_show(char *buf, int pretty)
 static ssize_t opmode_show(struct device *dev,
 	struct device_attribute *attr, char *buf)
 {
-	int length;
+	int length = 0;
 	ssize_t result;
 
 	struct elliptic_system_configuration_parameters_cache *cache =
@@ -518,7 +518,7 @@ static ssize_t opmode_show(struct device *dev,
 static ssize_t opmode_flags_show(struct device *dev,
 	struct device_attribute *attr, char *buf)
 {
-	int length;
+	int length = 0;
 	ssize_t result;
 	struct elliptic_system_configuration_parameters_cache *cache =
 				&elliptic_system_configuration_cache;
