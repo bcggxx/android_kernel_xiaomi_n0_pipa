@@ -5739,7 +5739,7 @@ int smblib_get_prop_usb_online(struct smb_charger *chg,
 int smblib_get_usb_online(struct smb_charger *chg,
 			union power_supply_propval *val)
 {
-	int rc;
+	int rc = 0;
 
 	if (chg->report_input_absent) {
 		val->intval = 0;
