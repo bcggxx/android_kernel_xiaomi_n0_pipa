@@ -1,5 +1,11 @@
 # 🎯 n0_kernel_pipa
 
+<p align="center">
+  <a href="README.en.md"><strong>🌍 English</strong></a> &nbsp;|&nbsp; <strong>🇨🇳 简体中文</strong>
+  <br>
+  <sub><i>点击上方链接切换语言 · Click above to switch language</i></sub>
+</p>
+
 基于 **Xiaomi SM8250** 平台的非 GKI 内核构建项目，集成 **KernelSU + SuSFS + ReKernel**。
 
 [![编译迁移](https://img.shields.io/badge/编译-新项目-blue?style=flat-square)](https://github.com/bcggxx/NonGKI_Kernel_Build_2nd/)
@@ -22,7 +28,7 @@
 
 ## ⚙️ ReKernel 使用说明
 
-使用 ReKernel 时，需要在 **NoActive** 等高级设置类软件中，**手动将 NetLink 选项设置为 `22`** 即可正常生效。
+使用 ReKernel 时，需要在 **NoActive 高级设置等类似软件** 中，**手动将 NetLink 选项设置为 `22`** 即可正常生效。
 
 ## 🚀 快速开始
 
