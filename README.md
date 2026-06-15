@@ -7,7 +7,7 @@
 
 ![Visitors](https://visitor-badge.laobi.icu/badge?page_id=bcggxx.n0_kernel_pipa&logo=github)
 
-## Star History
+## Star History 给我点个Star吧...
 
 <a href="https://www.star-history.com/?repos=bcggxx%2Fn0_kernel_pipa&type=date&legend=top-left">
  <picture>
