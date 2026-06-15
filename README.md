@@ -4,3 +4,5 @@
 感谢 https://github.com/CuriousNom/n0_kernel_pipa https://github.com/EmanuelCN/kernel_xiaomi_sm8250 https://github.com/JackA1ltman/NonGKI_Kernel_Build_2nd
 
 关于AI,本仓库大部分内容(仅我的提交),都是基于各大佬的文档及AI辅助编写的,其中文档参考较多的是JackA1ltman的[wiki](https://github.com/JackA1ltman/NonGKI_Kernel_Build_2nd/wiki)
+
+![Visitors](https://visitor-badge.laobi.icu/badge?page_id=bcggxx.n0_kernel_pipa&logo=github)
