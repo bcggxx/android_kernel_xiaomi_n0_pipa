@@ -6502,7 +6502,7 @@ int smblib_get_prop_smb_health(struct smb_charger *chg)
 
 	rc = smblib_is_input_present(chg, &input_present);
 	if (rc < 0)
-		return rc;
+		return POWER_SUPPLY_HEALTH_UNKNOWN;
 
 	if ((input_present == INPUT_NOT_PRESENT) || (!is_cp_available(chg)))
 		return POWER_SUPPLY_HEALTH_UNKNOWN;
@@ -6510,7 +6510,7 @@ int smblib_get_prop_smb_health(struct smb_charger *chg)
 	rc = power_supply_get_property(chg->cp_psy,
 				POWER_SUPPLY_PROP_CP_DIE_TEMP, &prop);
 	if (rc < 0)
-		return rc;
+		return POWER_SUPPLY_HEALTH_UNKNOWN;
 
 	if (prop.intval > SMB_TEMP_RST_THRESH)
 		return POWER_SUPPLY_HEALTH_OVERHEAT;
