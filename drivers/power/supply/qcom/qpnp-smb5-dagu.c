@@ -2074,7 +2074,8 @@ static int smb5_usb_main_get_prop(struct power_supply *psy,
 		break;
 	/* Use this property to report SMB health */
 	case POWER_SUPPLY_PROP_HEALTH:
-		rc = val->intval = smblib_get_prop_smb_health(chg);
+		val->intval = smblib_get_prop_smb_health(chg);
+		rc = 0;
 		break;
 	/* Use this property to report overheat status */
 	case POWER_SUPPLY_PROP_HOT_TEMP:
