@@ -525,7 +525,7 @@ static int bq2597x_enable_wdt(struct bq2597x *bq, bool enable)
 }
 EXPORT_SYMBOL_GPL(bq2597x_enable_wdt);
 
-static int bq2597x_set_wdt(struct bq2597x *bq, int ms)
+static int __maybe_unused bq2597x_set_wdt(struct bq2597x *bq, int ms)
 {
 	int ret;
 	u8 val;
@@ -1184,7 +1184,7 @@ static int bq2597x_set_alarm_int_mask(struct bq2597x *bq, u8 mask)
 }
 EXPORT_SYMBOL_GPL(bq2597x_set_alarm_int_mask);
 
-static int bq2597x_clear_alarm_int_mask(struct bq2597x *bq, u8 mask)
+static int __maybe_unused bq2597x_clear_alarm_int_mask(struct bq2597x *bq, u8 mask)
 {
 	int ret;
 	u8 val;
@@ -1218,7 +1218,7 @@ static int bq2597x_set_fault_int_mask(struct bq2597x *bq, u8 mask)
 }
 EXPORT_SYMBOL_GPL(bq2597x_set_fault_int_mask);
 
-static int bq2597x_clear_fault_int_mask(struct bq2597x *bq, u8 mask)
+static int __maybe_unused bq2597x_clear_fault_int_mask(struct bq2597x *bq, u8 mask)
 {
 	int ret;
 	u8 val;
@@ -1499,10 +1499,10 @@ static int bq2597x_get_dev_role(struct i2c_client *client)
 		return -EINVAL;
 	}
 
-	dev_info(&client->dev, "%s: matched to %s, dev_role: %d.\n",
-			__func__, of_id->compatible, (int)of_id->data);
+	dev_info(&client->dev, "%s: matched to %s, dev_role: %ld.\n",
+			__func__, of_id->compatible, (long)of_id->data);
 
-	return (int)of_id->data;
+	return (int)(long)of_id->data;
 }
 
 static int bq2597x_parse_dt(struct bq2597x *bq, struct device *dev)
@@ -2246,7 +2246,7 @@ static int bq2597x_psy_register(struct bq2597x *bq)
 	bq->fc2_psy = devm_power_supply_register(bq->dev,
 			&bq->psy_desc, &bq->psy_cfg);
 	if (IS_ERR(bq->fc2_psy)) {
-		bq_err("failed to register fc2_psy:%d\n", ret);
+		bq_err("failed to register fc2_psy:%ld\n", PTR_ERR(bq->fc2_psy));
 		return PTR_ERR(bq->fc2_psy);
 	}
 
@@ -2255,7 +2255,7 @@ static int bq2597x_psy_register(struct bq2597x *bq)
 	return 0;
 }
 
-static void bq2597x_dump_reg(struct bq2597x *bq)
+static void __maybe_unused bq2597x_dump_reg(struct bq2597x *bq)
 {
 
 	int ret;

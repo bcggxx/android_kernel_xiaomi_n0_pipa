@@ -746,9 +746,12 @@ overflow:
 	cfs_rq->sum_w_vruntime = 0;
 	cfs_rq->sum_weight = 0;
 
-	for (struct rb_node *node = cfs_rq->tasks_timeline.rb_leftmost;
-	     node; node = rb_next(node))
-		__sum_w_vruntime_add(cfs_rq, __node_2_se(node));
+	{
+		struct rb_node *node;
+		for (node = cfs_rq->tasks_timeline.rb_leftmost;
+		     node; node = rb_next(node))
+			__sum_w_vruntime_add(cfs_rq, __node_2_se(node));
+	}
 
 	goto again;
 }
@@ -878,7 +881,7 @@ bool update_entity_lag(struct cfs_rq *cfs_rq, struct sched_entity *se)
 		/* previous vlag < 0 otherwise se would not be delayed */
 		vlag = max(vlag, se->vlag);
 		if (sched_feat(DELAY_ZERO))
-			vlag = min(vlag, 0);
+			vlag = min_t(s64, vlag, 0);
 	}
 	ret = (vlag == se->vlag);
 	se->vlag = vlag;
