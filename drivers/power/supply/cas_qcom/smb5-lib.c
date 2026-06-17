@@ -5953,7 +5953,7 @@ int smblib_get_prop_charger_temp(struct smb_charger *chg,
 
 	rc = smblib_is_input_present(chg, &input_present);
 	if (rc < 0)
-		return rc;
+		return POWER_SUPPLY_HEALTH_UNKNOWN;
 
 	if (input_present == INPUT_NOT_PRESENT)
 		return -ENODATA;
@@ -6409,7 +6409,7 @@ int smblib_get_prop_die_health(struct smb_charger *chg)
 
 	rc = smblib_is_input_present(chg, &input_present);
 	if (rc < 0)
-		return rc;
+		return POWER_SUPPLY_HEALTH_UNKNOWN;
 
 	if (input_present == INPUT_NOT_PRESENT)
 		return POWER_SUPPLY_HEALTH_UNKNOWN;
