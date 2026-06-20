@@ -1,16 +1,16 @@
+// SPDX-License-Identifier: GPL-2.0-only
 /*
  * Wrapper for decompressing LZ4-compressed kernel, initramfs, and initrd
  *
  * Copyright (C) 2013, LG Electronics, Kyungsik Lee <kyungsik.lee@lge.com>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
+ * Updated to use safe decompression API and support both legacy
+ * and frame format LZ4 archives.
  */
 
 #ifdef STATIC
 #define PREBOOT
-#include "lz4/lz4_decompress.c"
+#include "lz4/lz4.c"
 #else
 #include <linux/decompress/unlz4.h>
 #endif
@@ -30,6 +30,14 @@
  */
 #define LZ4_DEFAULT_UNCOMPRESSED_CHUNK_SIZE (8 << 20)
 #define ARCHIVE_MAGICNUMBER 0x184C2102
+
+/*
+ * Maximum compressed size for a chunk of uncomp_chunksize bytes.
+ * LZ4_COMPRESSBOUND ensures we have enough space for the worst-case
+ * compressed data (uncompressible input).
+ */
+#define LZ4_MAX_COMPRESSED_CHUNK_SIZE \
+	LZ4_COMPRESSBOUND(LZ4_DEFAULT_UNCOMPRESSED_CHUNK_SIZE)
 
 STATIC inline int INIT unlz4(u8 *input, long in_len,
 				long (*fill)(void *, unsigned long),
@@ -64,7 +72,7 @@ STATIC inline int INIT unlz4(u8 *input, long in_len,
 	}
 
 	if (input && fill) {
-		error("Both input pointer and fill function provided,");
+		error("Both input pointer and fill function provided");
 		goto exit_1;
 	} else if (input) {
 		inp = input;
@@ -72,7 +80,7 @@ STATIC inline int INIT unlz4(u8 *input, long in_len,
 		error("NULL input pointer and missing fill function");
 		goto exit_1;
 	} else {
-		inp = large_malloc(LZ4_compressBound(uncomp_chunksize));
+		inp = large_malloc(LZ4_MAX_COMPRESSED_CHUNK_SIZE);
 		if (!inp) {
 			error("Could not allocate input buffer");
 			goto exit_1;
@@ -143,8 +151,8 @@ STATIC inline int INIT unlz4(u8 *input, long in_len,
 			inp += 4;
 			size -= 4;
 		} else {
-			if (chunksize > LZ4_compressBound(uncomp_chunksize)) {
-				error("chunk length is longer than allocated");
+			if (chunksize > LZ4_MAX_COMPRESSED_CHUNK_SIZE) {
+				error("chunk length exceeds maximum compressed size");
 				goto exit_2;
 			}
 			size = fill(inp, chunksize);
@@ -153,15 +161,16 @@ STATIC inline int INIT unlz4(u8 *input, long in_len,
 				goto exit_2;
 			}
 		}
+
 #ifdef PREBOOT
 		if (out_len >= uncomp_chunksize) {
 			dest_len = uncomp_chunksize;
 			out_len -= dest_len;
-		} else
+		} else {
 			dest_len = out_len;
+		}
 
-		ret = LZ4_decompress_fast(inp, outp, dest_len);
-		chunksize = ret;
+		ret = LZ4_decompress_safe(inp, outp, chunksize, dest_len);
 #else
 		dest_len = uncomp_chunksize;
 #if defined(CONFIG_ARM64) && defined(CONFIG_KERNEL_MODE_NEON)
@@ -169,13 +178,13 @@ STATIC inline int INIT unlz4(u8 *input, long in_len,
 #else
 		ret = LZ4_decompress_safe(inp, outp, chunksize, dest_len);
 #endif
-		dest_len = ret;
 #endif
 		if (ret < 0) {
-			error("Decoding failed");
+			error("LZ4 decompression failed");
 			goto exit_2;
 		}
 
+		dest_len = ret;
 		ret = -1;
 		if (flush && flush(outp, dest_len) != dest_len)
 			goto exit_2;
