@@ -66,7 +66,7 @@ The `#` comments next to the variable list the available Root managers:
 
 | Value | Description |
 |-------|-------------|
-| `Rksu` | NonGKI version of KernelSU |
+| `Rsuntk` | NonGKI version of KernelSU |
 | `KernelSU-NEXT` | KernelSU-NEXT |
 | `ResukiSU` | **Currently used version** (recommended) |
 
