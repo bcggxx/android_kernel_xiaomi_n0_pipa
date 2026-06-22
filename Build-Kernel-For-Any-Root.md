@@ -66,7 +66,7 @@
 
 | 变量值 | 说明 |
 |--------|------|
-| `Rksu` | KernelSU 的 NonGKI 版本 |
+| `Rsuntk` | KernelSU 的 NonGKI 版本 |
 | `NEXT` | KernelSU-NEXT |
 | `ResukiSU` | **当前使用的版本**（推荐） |
 
