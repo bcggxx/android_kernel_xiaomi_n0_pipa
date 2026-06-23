@@ -66,9 +66,8 @@ The `#` comments next to the variable list the available Root managers:
 
 | Value | Description |
 |-------|-------------|
-<<<<<<< HEAD
 | `Rsuntk` | NonGKI version of KernelSU |
-| `KernelSU-NEXT` | KernelSU-NEXT |
+| `NEXT` | KernelSU-NEXT |
 | `ResukiSU` | **Currently used version** (recommended) |
 
 > ⚠️ `magic` has an unknown purpose, `rsuntk` is the NonGKI flavor of KernelSU, and `sukisu` refers to SukiSU Ultra, which **no longer supports NonGKI devices**. Therefore, only **`Rksu`**, **`KernelSU-NEXT`**, and **`ResukiSU`** are viable options.
