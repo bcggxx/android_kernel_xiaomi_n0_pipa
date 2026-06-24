@@ -183,6 +183,11 @@ struct netns_ipv4 {
 #endif
 
 	int sysctl_igmp_max_memberships;
+	int sysctl_tcp_plb_enabled;
+	int sysctl_tcp_plb_idle_rehash_rounds;
+	int sysctl_tcp_plb_rehash_rounds;
+	int sysctl_tcp_plb_suspend_rto_sec;
+	int sysctl_tcp_plb_cong_thresh;
 	int sysctl_igmp_max_msf;
 	int sysctl_igmp_llm_reports;
 	int sysctl_igmp_qrv;
