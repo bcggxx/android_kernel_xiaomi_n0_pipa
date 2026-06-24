@@ -89,6 +89,9 @@ void tcp_rate_skb_delivered(struct sock *sk, struct sk_buff *skb,
 		rs->prior_mstamp     = scb->tx.delivered_mstamp;
 		rs->is_app_limited   = scb->tx.is_app_limited;
 		rs->is_retrans	     = scb->sacked & TCPCB_RETRANS;
+		rs->prior_lost       = 0;
+		rs->prior_delivered_ce = 0;
+		rs->tx_in_flight     = scb->tx.in_flight;
 
 		/* Record send time of most recently ACKed packet: */
 		tp->first_tx_mstamp  = tcp_skb_timestamp_us(skb);
@@ -125,6 +128,9 @@ void tcp_rate_gen(struct sock *sk, u32 delivered, u32 lost,
 
 	rs->acked_sacked = delivered;	/* freshly ACKed or SACKed */
 	rs->losses = lost;		/* freshly marked lost */
+	rs->lost   = tp->lost - rs->prior_lost;
+	rs->delivered_ce = tp->delivered_ce - rs->prior_delivered_ce;
+	rs->is_ece = false;
 	/* Return an invalid sample if no timing information is available or
 	 * in recovery from loss with SACK reneging. Rate samples taken during
 	 * a SACK reneging event may overestimate bw by including packets that

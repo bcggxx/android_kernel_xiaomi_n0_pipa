@@ -250,8 +250,10 @@ struct tcp_sock {
 		syn_fastopen_exp:1,/* SYN includes Fast Open exp. option */
 		syn_fastopen_ch:1, /* Active TFO re-enabling probe */
 		syn_data_acked:1,/* data in SYN is acked by SYN-ACK */
-		is_cwnd_limited:1;/* forward progress limited by snd_cwnd? */
+		is_cwnd_limited:1,/* forward progress limited by snd_cwnd? */
+		fast_ack_mode:1;/* ack ASAP if >1 rcv_mss received? */
 	u32	tlp_high_seq;	/* snd_nxt at the time of TLP */
+	u8	tlp_orig_data_app_limited:1;/* app-limited before TLP rtx? */
 
 	u64	tcp_wstamp_ns;	/* departure time for next sent data packet */
 	u64	tcp_clock_cache; /* cache last tcp_clock_ns() (see tcp_mstamp_refresh()) */
@@ -408,6 +410,7 @@ struct tcp_sock {
 	 */
 	struct request_sock __rcu *fastopen_rsk;
 	struct saved_syn *saved_syn;
+	u32	plb_rehash;	/* PLB-triggered rehash attempts */
 };
 
 enum tsq_enum {
