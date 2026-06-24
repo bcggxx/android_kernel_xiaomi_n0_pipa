@@ -93,7 +93,7 @@ else
     #Delete abnormal directory and clone again
     rm -rf anykernel  
     msg "Cloning AnyKernel3 for pipa..."
-    git clone https://github.com/bcggxx/AnyKernel3 -b pipa-n0 --single-branch --depth=1 anykernel
+    git clone https://github.com/bcggxx/AnyKernel3 -b master --single-branch --depth=1 anykernel
 fi
 
 #6.开始编译 / Start compilation
