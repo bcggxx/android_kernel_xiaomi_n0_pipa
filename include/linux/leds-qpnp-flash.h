@@ -28,7 +28,7 @@ static inline int qpnp_flash_led_prepare(struct led_trigger *trig, int options,
 }
 #endif
 
-#ifdef CONFIG_BACKLIGHT_QCOM_SPMI_WLED
+#if defined(CONFIG_BACKLIGHT_QCOM_SPMI_WLED) || defined(CONFIG_BACKLIGHT_QCOM_SPMI_WLED_MODULE)
 int wled_flash_led_prepare(struct led_trigger *trig, int options,
 					int *max_current);
 #else
