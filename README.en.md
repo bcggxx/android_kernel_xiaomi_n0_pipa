@@ -41,7 +41,7 @@ To compile a kernel without Root, simply fork this repository and run it via Act
 To build a kernel with Root, fork the [NonGKI_Kernel_Build_2nd](https://github.com/bcggxx/NonGKI_Kernel_Build_2nd) repository.  
 Don't want to use ReSukiSU? After forking, simply change the `KERNELSU_AUTO_FORK` variable to your desired KernelSU fork, and SuSFS will already be pre-patched for you.
 
-> 📖 **Detailed Guide**: See [Build a Kernel with Any Root Manager](./Build-Kernel-For-Any-Root.en.md) or [中文版本](./Build-Kernel-For-Any-Root.md).
+> 📖 **Detailed Guide**: See [Build a Kernel with Any Root Manager](https://github.com/bcggxx/android_kernel_xiaomi_n0_pipa/wiki/Build-Kernel-For-Any-Root.en) or [中文版本](https://github.com/bcggxx/android_kernel_xiaomi_n0_pipa/wiki/Build-Kernel-For-Any-Root).
 
 ## 🙏 Acknowledgements
 
