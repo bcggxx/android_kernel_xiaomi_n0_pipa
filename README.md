@@ -41,7 +41,7 @@
 如需构建带有 Root 的内核，请 Fork [NonGKI_Kernel_Build_2nd](https://github.com/bcggxx/NonGKI_Kernel_Build_2nd) 仓库。  
 不想使用 ReSukiSU？Fork 后仅需将 `KERNELSU_AUTO_FORK` 变量修改为你想要的 KernelSU 分支即可，SuSFS 已为你预先 Patch 好。
 
-> 📖 **详细教程**：请参阅 [为任意 Root 管理器构建内核](./Build-Kernel-For-Any-Root.md) 或 [English Version](./Build-Kernel-For-Any-Root.en.md)。
+> 📖 **详细教程**：请参阅 [为任意 Root 管理器构建内核](https://github.com/bcggxx/android_kernel_xiaomi_n0_pipa/wiki/Build-Kernel-For-Any-Root) 或 [English Version](https://github.com/bcggxx/android_kernel_xiaomi_n0_pipa/wiki/Build-Kernel-For-Any-Root.en)。
 
 ## 🙏 致谢
 
