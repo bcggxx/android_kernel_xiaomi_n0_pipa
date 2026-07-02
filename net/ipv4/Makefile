@@ -45,7 +45,6 @@ obj-$(CONFIG_INET_XFRM_MODE_TUNNEL) += xfrm4_mode_tunnel.o
 obj-$(CONFIG_IP_PNP) += ipconfig.o
 obj-$(CONFIG_NETFILTER)	+= netfilter.o netfilter/
 obj-$(CONFIG_TCP_CONG_BBR) += tcp_bbr.o
-obj-$(CONFIG_TCP_CONG_BBR1) += tcp_bbr1.o
 obj-$(CONFIG_INET_DIAG) += inet_diag.o
 obj-$(CONFIG_INET_TCP_DIAG) += tcp_diag.o
 obj-$(CONFIG_INET_UDP_DIAG) += udp_diag.o
