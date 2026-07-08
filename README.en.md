@@ -25,7 +25,7 @@ The Root version builds for this repository have been migrated to the [NonGKI_Ke
 
 - [**ReSukiSU**](https://github.com/ReSukiSU/ReSukiSU/) — A more stable fork of SukiSU. SukiSU itself is a powerful kernel-level Root solution that makes no compromises on security; ReSukiSU further improves stability on top of that foundation.
 - [**SuSFS**](https://gitlab.com/simonpunk/susfs4ksu/) — A root-hiding kernel patch and userspace module designed for KernelSU, effectively bypassing root detection by apps.
-- [**ReKernel**](https://github.com/Sakion-Team/Re-Kernel/) — Committed to providing a smoother and more stable user experience for tombstone users.
+- [**ReKernel**](https://github.com/Sakion-Team/Re-Kernel/) — Committed to providing a smoother and more stable user experience, especially for users who freeze background apps.
 
 ## ⚙️ ReKernel Usage Notes
 
@@ -54,7 +54,7 @@ Thanks to the following projects and individuals for their contributions:
 
 ## 🤖 About AI
 
-Most of the content in this repository (only my commits) was written with reference to documentation from various experts and assisted by AI. Among them, JackA1ltman's [Wiki](https://github.com/JackA1ltman/NonGKI_Kernel_Build_2nd/wiki) was most heavily referenced.
+Most of the content in this repository (only my commits) was written with reference to documentation from various experts and assisted by AI. Among them, JackA1ltman's [Wiki](https://github.com/JackA1ltman/NonGKI_Kernel_Build_2nd/wiki) was the most heavily referenced.
 
 ---
 
