@@ -19,7 +19,7 @@
 
 ## 📦 项目说明
 
-内核源代码仓库将**永远保持无任何东西集成**。
+内核源代码仓库将**始终保持纯净，不集成任何第三方组件**。
 
 本仓库的 Root 版本编译已迁移至 [NonGKI_Kernel_Build_2nd](https://github.com/bcggxx/NonGKI_Kernel_Build_2nd/) 项目进行维护，集成了以下组件：
 
@@ -29,7 +29,7 @@
 
 ## ⚙️ ReKernel 使用说明
 
-使用 ReKernel 时，需要在 **NoActive 高级设置等类似软件** 中，**手动将 NetLink 选项设置为 `22`** 即可正常生效。
+使用 ReKernel 时，需在 **NoActive 高级设置等类似软件** 中，**将 NetLink 选项手动设置为 `22`** 即可生效。
 
 ## 🚀 快速开始
 
