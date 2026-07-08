@@ -15,13 +15,24 @@
 [![酷安](https://img.shields.io/badge/酷安-查看帖子-green?style=flat-square)](https://www.coolapk.com/feed/72401325)
 ![Visitors](https://visitor-badge.laobi.icu/badge?page_id=bcggxx.android_kernel_xiaomi_n0_pipa&logo=github)
 
+## 📑 目录
+
+- [📦 项目说明](#项目说明)
+- [⚙️ ReKernel 使用说明](#rekernel-使用说明)
+- [🚀 快速开始](#快速开始)
+  - [构建无 Root 内核](#构建无-root-内核)
+  - [构建有 Root 内核](#构建有-root-内核)
+- [🙏 致谢](#致谢)
+- [🤖 关于 AI](#关于-ai)
+- [⭐ Star History](#star-history)
+
 ---
 
 ## 📦 项目说明
 
-内核源代码仓库将**始终保持纯净，不集成任何第三方组件**。
-
-本仓库的 Root 版本编译已迁移至 [NonGKI_Kernel_Build_2nd](https://github.com/bcggxx/NonGKI_Kernel_Build_2nd/) 项目进行维护，集成了以下组件：
+> [!NOTE]
+> 本仓库的**内核源代码始终保持纯净，不集成任何第三方组件**。  
+> 带 Root 的编译版本已统一迁移至 [NonGKI_Kernel_Build_2nd](https://github.com/bcggxx/NonGKI_Kernel_Build_2nd/) 项目进行维护，该项目集成了以下组件：
 
 - [**ReSukiSU**](https://github.com/ReSukiSU/ReSukiSU/) — 一个更加稳定的 SukiSU 分支。SukiSU 本身是强大的内核级 Root 权限方案，在安全性上毫不让步；ReSukiSU 则在此基础上进一步提升了稳定性。
 - [**SuSFS**](https://gitlab.com/simonpunk/susfs4ksu/) — 面向 KernelSU 的 Root 隐藏内核补丁及用户空间模块，能够有效绕过应用对 Root 的检测。
@@ -29,9 +40,16 @@
 
 ## ⚙️ ReKernel 使用说明
 
-使用 ReKernel 时，需在 **NoActive 高级设置等类似软件** 中，**将 NetLink 选项手动设置为 `22`** 即可生效。
+> [!IMPORTANT]
+> 使用 ReKernel 时，需在 **NoActive 高级设置等类似软件** 中，**将 NetLink 选项手动设置为 `22`** 才能生效。
+
+设置完成后，ReKernel 即可为后台墓碑应用提供更流畅、更稳定的体验。
 
 ## 🚀 快速开始
+
+> [!TIP]
+> 只想编译纯净内核？直接 Fork 本仓库并运行 Actions 即可。  
+> 需要 Root 权限？请 Fork [NonGKI_Kernel_Build_2nd](https://github.com/bcggxx/NonGKI_Kernel_Build_2nd) 仓库，修改 `KERNELSU_AUTO_FORK` 变量即可切换 KernelSU 分支。
 
 ### 构建无 Root 内核
 
