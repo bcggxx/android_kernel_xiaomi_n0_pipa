@@ -125,20 +125,20 @@ fi
 msg "Kernel compiled successfully in $(($DIFF / 60)) minute(s) and $(($DIFF % 60)) second(s)."
 msg "Packaging with AnyKernel3..."
 
-mkdir -p anykernel/kernels/
+mkdir -p anykernel/
 
 #安全拷贝内核文件并做异常处理
 #Safely copy kernel files and handle exceptions
-cp out/arch/arm64/boot/Image anykernel/kernels/ || { err "Failed to copy Image."; exit 1; }
+cp out/arch/arm64/boot/Image anykernel/ || { err "Failed to copy Image."; exit 1; }
 
 if [ -f "out/arch/arm64/boot/dtb" ]; then
-    cp out/arch/arm64/boot/dtb anykernel/kernels/
+    cp out/arch/arm64/boot/dtb anykernel/
 else
     warn "dtb not found, skipping."
 fi
 
 if [ -f "out/arch/arm64/boot/dtbo.img" ]; then
-    cp out/arch/arm64/boot/dtbo.img anykernel/kernels/
+    cp out/arch/arm64/boot/dtbo.img anykernel/
 else
     warn "dtbo.img not found, skipping."
 fi
