@@ -1,4 +1,4 @@
-# 🎯 n0_kernel_pipa
+# 🎯 android_kernel_xiaomi_n0_pipa
 
 <p align="center">
   <strong>🌍 English</strong> &nbsp;|&nbsp; <a href="README.md"><strong>🇨🇳 简体中文</strong></a>
@@ -12,7 +12,8 @@ A non-GKI kernel build project based on the **Xiaomi SM8250** platform, integrat
 [![ReSukiSU](https://img.shields.io/badge/KernelSU-ReSukiSU-red?style=flat-square)](https://github.com/ReSukiSU/ReSukiSU/)
 [![SuSFS](https://img.shields.io/badge/root-SuSFS-green?style=flat-square)](https://gitlab.com/simonpunk/susfs4ksu/)
 [![ReKernel](https://img.shields.io/badge/Kernel-ReKernel-purple?style=flat-square)](https://github.com/Sakion-Team/Re-Kernel/)
-![Visitors](https://visitor-badge.laobi.icu/badge?page_id=bcggxx.n0_kernel_pipa&logo=github)
+[![CoolAPK](https://img.shields.io/badge/CoolAPK-View%20Post-orange?style=flat-square)](https://www.coolapk.com/feed/72401325)
+![Visitors](https://visitor-badge.laobi.icu/badge?page_id=bcggxx.android_kernel_xiaomi_n0_pipa&logo=github)
 
 ---
 
@@ -61,10 +62,10 @@ Most of the content in this repository (only my commits) was written with refere
 
 If you find this project helpful, feel free to give it a star! 🌟
 
-<a href="https://www.star-history.com/?repos=bcggxx%2Fn0_kernel_pipa&type=date&legend=top-left">
+<a href="https://www.star-history.com/?repos=bcggxx%2Fandroid_kernel_xiaomi_n0_pipa&type=date&legend=top-left">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=bcggxx/n0_kernel_pipa&type=date&theme=dark&legend=top-left" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=bcggxx/n0_kernel_pipa&type=date&legend=top-left" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=bcggxx/n0_kernel_pipa&type=date&legend=top-left" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=bcggxx/android_kernel_xiaomi_n0_pipa&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=bcggxx/android_kernel_xiaomi_n0_pipa&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=bcggxx/android_kernel_xiaomi_n0_pipa&type=date&legend=top-left" />
  </picture>
 </a>
