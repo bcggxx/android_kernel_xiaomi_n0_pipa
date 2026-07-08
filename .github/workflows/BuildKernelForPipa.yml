@@ -11,16 +11,28 @@ on:
         options:
           - staging
           - pipa-bpf
+  push:
+    branches:
+      - staging
+      - pipa-bpf
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
-
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v7
         with:
-          ref: ${{ inputs.branch }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.branch || github.ref_name }}
+
+      - name: Set branch environment variable
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            BRANCH="${{ github.event.inputs.branch }}"
+          else
+            BRANCH="${{ github.ref_name }}"
+          fi
+          echo "BRANCH=$BRANCH" >> $GITHUB_ENV
 
       - name: Install Dependencies
         run: |
