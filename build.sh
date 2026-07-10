@@ -164,13 +164,13 @@ mkdir -p anykernel/
 cp out/arch/arm64/boot/Image anykernel/ || { err "拷贝 Image 失败 / Failed to copy Image."; exit 1; }
 
 if [ -f "out/arch/arm64/boot/dtb" ]; then
-    cp out/arch/arm64/boot/dtb anykernel/
+    cp out/arch/arm64/boot/dtb anykernel/ || { err "拷贝 dtb 失败 / Failed to copy dtb."; exit 1; }
 else
     warn "未找到 dtb，跳过 / dtb not found, skipping."
 fi
 
 if [ -f "out/arch/arm64/boot/dtbo.img" ]; then
-    cp out/arch/arm64/boot/dtbo.img anykernel/
+    cp out/arch/arm64/boot/dtbo.img anykernel/ || { err "拷贝 dtbo.img 失败 / Failed to copy dtbo.img."; exit 1; }
 else
     warn "未找到 dtbo.img，跳过 / dtbo.img not found, skipping."
 fi
