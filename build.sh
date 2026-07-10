@@ -32,10 +32,10 @@ function err() {
 #检查基础依赖是否均已安装
 #Check if basic dependencies are installed
 msg "检查所需依赖项 / Checking required dependencies..."
-for cmd in git curl zip make; do
-    if ! command -v $cmd &> /dev/null; then
-        err "未找到所需命令 '$cmd'，请先安装" \
-           "Required command '$cmd' is not installed. Please install it first."
+for dep in git curl zip make; do
+    if ! command -v "$dep" &> /dev/null; then
+        err "未找到所需命令 '$dep'，请先安装" \
+           "Required command '$dep' is not installed. Please install it first."
         exit 1
     fi
 done
