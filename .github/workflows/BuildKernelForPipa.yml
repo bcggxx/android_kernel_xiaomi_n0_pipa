@@ -3,36 +3,80 @@ name: Build Kernel For Pipa
 on:
   workflow_dispatch:
     inputs:
-      branch:
-        description: '请选择要编译的分支/Please select the branch to build.'
+      build_staging:
+        description: '编译 staging 分支 / Build staging branch'
         required: true
-        default: 'staging'
-        type: choice
-        options:
-          - staging
-          - pipa-bpf
-  push:
-    branches:
-      - staging
-      - pipa-bpf
+        type: boolean
+        default: true
+      build_pipa_bpf:
+        description: '编译 pipa-bpf 分支 / Build pipa-bpf branch'
+        required: true
+        type: boolean
+        default: true
+      publish_release:
+        description: '发布 Release / Publish Release (需同时编译两个分支 / Requires both branches to be built)'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
 
 jobs:
-  build:
+  prepare:
     runs-on: ubuntu-latest
+    outputs:
+      branches: ${{ steps.set-matrix.outputs.branches }}
+      should_release: ${{ steps.set-matrix.outputs.should_release }}
+    steps:
+      - id: set-matrix
+        run: |
+          BRANCHES="[]"
+          if [ "${{ github.event.inputs.build_staging }}" == "true" ]; then
+            BRANCHES=$(echo "$BRANCHES" | jq -c '. + ["staging"]')
+          fi
+          if [ "${{ github.event.inputs.build_pipa_bpf }}" == "true" ]; then
+            BRANCHES=$(echo "$BRANCHES" | jq -c '. + ["pipa-bpf"]')
+          fi
+          echo "branches=$BRANCHES" >> $GITHUB_OUTPUT
+
+          if [ "${{ github.event.inputs.publish_release }}" == "true" ] && \
+             [ "${{ github.event.inputs.build_staging }}" == "true" ] && \
+             [ "${{ github.event.inputs.build_pipa_bpf }}" == "true" ]; then
+            echo "should_release=true" >> $GITHUB_OUTPUT
+          else
+            echo "should_release=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Validate inputs
+        run: |
+          if [ "${{ steps.set-matrix.outputs.branches }}" == "[]" ]; then
+            echo "::error::至少选择一个分支进行编译 / At least one branch must be selected"
+            exit 1
+          fi
+          if [ "${{ github.event.inputs.publish_release }}" == "true" ]; then
+            if [ "${{ github.event.inputs.build_staging }}" != "true" ] || \
+               [ "${{ github.event.inputs.build_pipa_bpf }}" != "true" ]; then
+              echo "::error::发布 Release 需要同时编译两个分支 / Publishing release requires both branches to be built"
+              exit 1
+            fi
+          fi
+
+  build:
+    needs: prepare
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        branch: ${{ fromJson(needs.prepare.outputs.branches) }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
         with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.branch || github.ref_name }}
+          ref: ${{ matrix.branch }}
 
       - name: Set branch environment variable
         run: |
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            BRANCH="${{ github.event.inputs.branch }}"
-          else
-            BRANCH="${{ github.ref_name }}"
-          fi
-          echo "BRANCH=$BRANCH" >> $GITHUB_ENV
+          echo "BRANCH=${{ matrix.branch }}" >> $GITHUB_ENV
 
       - name: Install Dependencies
         run: |
@@ -67,7 +111,7 @@ jobs:
       - name: Upload Kernel Zip
         uses: actions/upload-artifact@v7
         with:
-          name: Kernel-Pipa-${{ github.run_number }}
+          name: Kernel-Pipa-${{ matrix.branch }}-${{ github.run_number }}
           path: '*.zip'
           if-no-files-found: error
 
@@ -75,5 +119,28 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: build-error-log
+          name: build-error-log-${{ matrix.branch }}
           path: error.log
+
+  release:
+    needs: [prepare, build]
+    if: ${{ needs.prepare.outputs.should_release == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v7
+        with:
+          path: artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: Pipa-${{ github.run_number }}
+          name: Kernel Pipa #${{ github.run_number }}
+          body: |
+            自动构建的内核包 / Auto-built kernel zips
+
+            分支/Branches: staging, pipa-bpf
+            构建编号/Build: #${{ github.run_number }}
+          files: artifacts/**/*.zip
+          prerelease: true
