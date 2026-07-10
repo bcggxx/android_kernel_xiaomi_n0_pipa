@@ -1,4 +1,4 @@
-name: Test Kernel For Pipa
+name: Test Kernel Build For Pipa
 
 on:
   push:
