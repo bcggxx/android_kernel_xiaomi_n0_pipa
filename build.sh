@@ -124,10 +124,23 @@ BUILD_START=$(date +"%s")
 
 #编译主流程：输出同步到终端和错误日志
 #Main build process: sync output to terminal and error log
+#临时关闭 set -e，以便捕获 make 的退出码并给出友好提示
+#Temporarily disable set -e to capture make's exit code and show friendly message
+set +e
 make $MAKE_ARGS -j$(nproc --all) 2>&1 | tee error.log
+MAKE_EXIT_CODE=${PIPESTATUS[0]}
+set -e
 
 BUILD_END=$(date +"%s")
 DIFF=$(($BUILD_END - $BUILD_START))
+
+#检查编译退出码 / Check build exit code
+if [ "$MAKE_EXIT_CODE" -ne 0 ]; then
+    err "内核编译失败，退出码 $MAKE_EXIT_CODE" \
+       "Kernel build failed with exit code $MAKE_EXIT_CODE!"
+    err "请查看 error.log 获取详细失败原因 / Check error.log for detailed failure reasons."
+    exit 1
+fi
 
 #7.检查产物与打包 / Check artifacts and package
 #检查构建产物 / Check build artifacts
