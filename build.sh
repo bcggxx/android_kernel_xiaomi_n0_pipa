@@ -157,8 +157,6 @@ msg "内核编译成功，耗时 $(($DIFF / 60)) 分 $(($DIFF % 60)) 秒" \
     "Kernel compiled successfully in $(($DIFF / 60)) minute(s) and $(($DIFF % 60)) second(s)."
 msg "使用 AnyKernel3 打包 / Packaging with AnyKernel3..."
 
-mkdir -p anykernel/
-
 #安全拷贝内核文件并做异常处理
 #Safely copy kernel files and handle exceptions
 cp out/arch/arm64/boot/Image anykernel/ || { err "拷贝 Image 失败 / Failed to copy Image."; exit 1; }
