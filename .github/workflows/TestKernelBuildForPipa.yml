@@ -1,0 +1,60 @@
+name: Test Kernel Build For Pipa
+
+on:
+  push:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set branch environment variable
+        run: |
+          BRANCH="${{ github.ref_name }}"
+          echo "BRANCH=$BRANCH" >> $GITHUB_ENV
+
+      - name: Install Dependencies
+        run: |
+          sudo apt update
+
+          sudo apt install nano vim wget curl git ccache \
+          automake flex lzop bison gperf build-essential zip \
+          curl zlib1g-dev g++-multilib libxml2-utils bzip2 \
+          libbz2-dev libbz2-1.0 libghc-bzlib-dev squashfs-tools \
+          pngcrush schedtool dpkg-dev liblz4-tool make optipng \
+          maven libssl-dev pwgen libswitch-perl policycoreutils \
+          minicom libxml-sax-base-perl libxml-simple-perl bc \
+          libc6-dev-i386 lib32ncurses-dev libx11-dev lib32z-dev \
+          libgl1-mesa-dev xsltproc unzip device-tree-compiler \
+          cpio p7zip p7zip-full libtinfo6 -y
+
+          sudo apt install python3 python-is-python3 -y
+
+      - name: Install AOSP-Clang
+        run: |
+          mkdir -p ${{ github.workspace }}/clang
+          wget -c --tries=10 --waitretry=5 --retry-on-host-error --retry-connrefused -O clang.tar.gz "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/mirror-goog-main-llvm-toolchain-source/clang-r547379.tar.gz"
+          tar -xzf clang.tar.gz -C ${{ github.workspace }}/clang
+          echo "${{ github.workspace }}/clang/bin" >> $GITHUB_PATH
+
+      - name: Grant execute permission for build.sh
+        run: chmod +x build.sh
+
+      - name: Build Kernel (Test)
+        run: ./build.sh
+
+      - name: Upload Kernel Zip
+        uses: actions/upload-artifact@v7
+        with:
+          name: Kernel-Pipa-Test-${{ github.ref_name }}-${{ github.run_number }}
+          path: '*.zip'
+          if-no-files-found: error
+
+      - name: Upload Error Log
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-error-log-${{ github.ref_name }}
+          path: error.log
