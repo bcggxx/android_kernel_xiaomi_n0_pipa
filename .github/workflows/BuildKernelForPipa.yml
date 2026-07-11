@@ -142,5 +142,6 @@ jobs:
 
             分支/Branches: staging, pipa-bpf
             构建编号/Build: #${{ github.run_number }}
+            No Root/无Root
           files: artifacts/**/*.zip
           prerelease: true
