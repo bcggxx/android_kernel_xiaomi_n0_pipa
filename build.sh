@@ -15,17 +15,19 @@ NC='\033[0m' #无颜色 / No Color
 
 #输出函数支持双语，短文本用单行，长文本用第二参数换行
 #Output functions support bilingual: short text in one line, long text wraps via second arg
+#使用 if 而非 [ ] && 以避免 set -e 在参数为空时退出
+#Use if instead of [ ] && to avoid set -e exit when arg is empty
 function msg() {
     echo -e "${GREEN}[INFO]${NC} $1"
-    [ -n "$2" ] && echo -e "${GREEN}[INFO]${NC} $2"
+    if [ -n "$2" ]; then echo -e "${GREEN}[INFO]${NC} $2"; fi
 }
 function warn() {
     echo -e "${YELLOW}[WARN]${NC} $1"
-    [ -n "$2" ] && echo -e "${YELLOW}[WARN]${NC} $2"
+    if [ -n "$2" ]; then echo -e "${YELLOW}[WARN]${NC} $2"; fi
 }
 function err() {
     echo -e "${RED}[ERROR]${NC} $1"
-    [ -n "$2" ] && echo -e "${RED}[ERROR]${NC} $2"
+    if [ -n "$2" ]; then echo -e "${RED}[ERROR]${NC} $2"; fi
 }
 
 #2.依赖项与前置检查 / Dependencies and pre-checks
