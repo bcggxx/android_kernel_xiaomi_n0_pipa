@@ -17,6 +17,7 @@ A non-GKI kernel build project based on the **Xiaomi SM8250** platform, integrat
 
 ## 📑 Table of Contents
 
+- [🏆 Why Choose Us](#why-choose-us)
 - [📦 Project Description](#project-description)
 - [⚙️ ReKernel Usage Notes](#rekernel-usage-notes)
 - [🚀 Quick Start](#quick-start)
@@ -27,6 +28,17 @@ A non-GKI kernel build project based on the **Xiaomi SM8250** platform, integrat
 - [⭐ Star History](#star-history)
 
 ---
+
+## 🏆 Why Choose Us
+
+- **Out of the box** — Fork the repo and build via Actions, zero local environment setup, beginner-friendly
+- **Flexible switching** — SuSFS pre-patched + `KERNELSU_AUTO_FORK` one-variable switch between KernelSU forks, not locked into a single Root solution
+- **Actively maintained** — Continuously tracks upstream updates, ReSukiSU/SuSFS/ReKernel versions kept in sync
+- **Clean architecture** — Clean kernel and Root builds maintained separately, pick what you need without interference
+- **Stability first** — Uses ReSukiSU (a more stable SukiSU fork), balancing security and stability
+- **Tombstone-friendly** — Integrates ReKernel for a smoother experience when freezing background apps
+- **Well-documented** — Detailed Wiki guides, accessible to newcomers
+- **Completely free** — Open source and free, no commercial ties
 
 ## 📦 Project Description
 
