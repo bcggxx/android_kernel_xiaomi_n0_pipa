@@ -51,6 +51,8 @@ if ! command -v "${CC:-clang}" &> /dev/null; then
     exit 1
 fi
 
+#获取 Clang 资源目录并向上回溯三级，推导出工具链根路径
+#Get Clang resource dir and go up three levels to derive the toolchain root path
 RESOURCE_DIR="$("${CC:-clang}" --print-resource-dir)"
 TOOLCHAIN_PATH="$(dirname "$(dirname "$(dirname "$RESOURCE_DIR")")")"
 
@@ -68,10 +70,8 @@ fi
 #检查工具链路径是否有效
 #Check if toolchain path is valid
 if [ ! -d "$TOOLCHAIN_PATH" ]; then
-    err "工具链路径 [$TOOLCHAIN_PATH] 不存在" \
-       "TOOLCHAIN_PATH [$TOOLCHAIN_PATH] does not exist."
-    echo "请确保工具链位于该路径，或在脚本中修改 TOOLCHAIN_PATH"
-    echo "Please ensure the toolchain is there, or change TOOLCHAIN_PATH in the script."
+    err "工具链路径 [$TOOLCHAIN_PATH] 不存在，请确保工具链位于该路径，或在脚本中修改 TOOLCHAIN_PATH" \
+       "TOOLCHAIN_PATH [$TOOLCHAIN_PATH] does not exist. Please ensure the toolchain is at this path, or modify TOOLCHAIN_PATH in the script."
     exit 1
 fi
 
@@ -85,8 +85,8 @@ msg "检查 Clang 版本 / Checking Clang version:"
 clang --version
 
 #导出构建变量 / Export build variables
-export KBUILD_BUILD_USER="aryan"
-export KBUILD_BUILD_HOST="curiousnom"
+export KBUILD_BUILD_USER="github"
+export KBUILD_BUILD_HOST="bcggxx"
 export KBUILD_LAST_COMMIT=${GIT_COMMIT_ID}
 
 #4.强制清理逻辑 / Forced Clean Build logic
@@ -101,15 +101,13 @@ mkdir -p out/
 #5.准备 AnyKernel3 / Prepare AnyKernel3
 msg "准备 AnyKernel3 / Preparing AnyKernel3..."
 if [ -d "anykernel/.git" ]; then
-    #AnyKernel3已克隆，跳过克隆
-    #AnyKernel3 already cloned. Skipping clone.
     msg "AnyKernel3 已克隆，跳过克隆 / AnyKernel3 already cloned. Skipping clone."
     #清理残留的打包内核文件以确保环境干净
     #Clean up residual packed kernel files to ensure a clean environment
     rm -rf anykernel/kernels/*
 else
-    #删除异常目录并重新克隆
-    #Delete abnormal directory and clone again
+    #删除不完整的目录并重新克隆
+    #Remove incomplete directory and re-clone
     rm -rf anykernel  
     msg "为 pipa 克隆 AnyKernel3 / Cloning AnyKernel3 for pipa..."
     git clone https://github.com/bcggxx/AnyKernel3 -b n0-A15 --single-branch --depth=1 anykernel
@@ -197,6 +195,6 @@ cd ..
 
 msg "PIPA 构建完成 / Build for PIPA finished."
 echo -e "${GREEN}=====================================================${NC}"
-echo -e "${GREEN}完成！刷机 zip 位于: ./$ZIP_FILENAME${NC}"
+echo -e "${GREEN}完成！刷机包位于: ./$ZIP_FILENAME${NC}"
 echo -e "${GREEN}Done! The flashable zip is: ./$ZIP_FILENAME${NC}"
 echo -e "${GREEN}=====================================================${NC}"
