@@ -31,6 +31,7 @@
 #include <linux/rcupdate.h>
 #include <linux/perf_event.h>
 #include <linux/extable.h>
+#include <linux/nospec.h>
 
 #include <asm/barrier.h>
 #include <linux/log2.h>
