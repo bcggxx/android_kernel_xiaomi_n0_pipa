@@ -1,0 +1,16 @@
+config MIHW
+	bool "Xiaomi Kernel Feature config"
+	depends on ARCH_QCOM
+	default y
+
+config MILLET
+	bool "frozen framework"
+	depends on MIHW
+
+config XIAOMI_METIS
+	bool "boost cpufreq when load high"
+	depends on MIHW
+
+config SOFTWARE_OS3
+	bool "create HyperOS 3 software"
+	depends on MIHW
