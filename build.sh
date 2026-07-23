@@ -62,6 +62,31 @@ export PATH="$TOOLCHAIN_PATH:$PATH"
 
 MAKE_ARGS="ARCH=arm64 O=out CC=clang LLVM=1 LLVM_IAS=1 LD=ld.lld CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_COMPAT=arm-linux-gnueabi- AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip"
 
+#3.1 主机端 OpenSSL 头文件检测 / Host OpenSSL headers detection
+#部分环境未安装 libssl-dev，导致 scripts/extract-cert.c 等主机工具
+#编译时找不到 <openssl/bio.h>。此处优先使用系统头文件，缺失时回退到
+#预置的本地副本，避免构建在配置阶段即失败。
+#Some environments lack libssl-dev, which breaks host tools such as
+#scripts/extract-cert.c that include <openssl/bio.h>. Prefer the system
+#headers and fall back to a bundled local copy when they are missing.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LOCAL_SSL_INCLUDE="$SCRIPT_DIR/../.build-deps/ssl-usr/include"
+LOCAL_SSL_ARCH_INCLUDE="$SCRIPT_DIR/../.build-deps/ssl-usr/include/x86_64-linux-gnu"
+if [ ! -f /usr/include/openssl/bio.h ]; then
+    if [ -f "$LOCAL_SSL_INCLUDE/openssl/bio.h" ]; then
+        warn "System openssl headers not found. Using local copy at [$LOCAL_SSL_INCLUDE]."
+        #KBUILD_HOSTCFLAGS 在顶层 Makefile 中由 \$(HOSTCFLAGS) 拼接而成，
+        #故通过环境变量导出即可同时追加多个 -I 路径（含架构相关的 opensslconf.h）。
+        #KBUILD_HOSTCFLAGS is assembled from \$(HOSTCFLAGS) in the top-level
+        #Makefile, so exporting it lets us append multiple -I paths at once,
+        #including the arch-specific opensslconf.h location.
+        export HOSTCFLAGS="-I$LOCAL_SSL_INCLUDE -I$LOCAL_SSL_ARCH_INCLUDE"
+    else
+        err "OpenSSL headers not found. Install libssl-dev or place headers under .build-deps/ssl-usr."
+        exit 1
+    fi
+fi
+
 #检查 Clang 版本 / Check Clang version
 msg "Checking Clang version:"
 clang --version
@@ -100,6 +125,30 @@ fi
 msg "Configuring for PIPA (pipa_defconfig)..."
 make $MAKE_ARGS pipa_defconfig
 
+#6.1 按内存动态计算并行度 / Compute parallelism based on available memory
+#本工具链启用 thin-LTO + polly，单个 clang 进程峰值约 1.5~2GB。
+#直接使用 -j$(nproc) 在低内存机器上会因并行 clang 实例过多导致 OOM /
+#段错误（exit 139）。这里按可用内存估算安全的 -j，并允许通过 JOBS 环境变量覆盖。
+#The toolchain enables thin-LTO + polly; each clang process peaks at ~1.5-2GB.
+#Using -j$(nproc) on low-memory hosts triggers OOM / segfault (exit 139) under
+#parallel load. Estimate a safe -j from available memory; allow override via JOBS.
+if [ -z "${JOBS:-}" ]; then
+    MEM_AVAIL_KB=$(awk '/MemAvailable:/ {print $2; exit}' /proc/meminfo 2>/dev/null || echo 0)
+    SWAP_FREE_KB=$(awk '/SwapFree:/ {print $2; exit}' /proc/meminfo 2>/dev/null || echo 0)
+    #每作业预算 1500000 KB（约 1.5GB），向下取整，至少 1
+    #Per-job budget ~1.5GB; floor to an integer, minimum 1
+    MEM_BASED_JOBS=$(( (MEM_AVAIL_KB + SWAP_FREE_KB) / 1500000 ))
+    [ "$MEM_BASED_JOBS" -lt 1 ] && MEM_BASED_JOBS=1
+    CPU_JOBS=$(nproc --all)
+    if [ "$MEM_BASED_JOBS" -lt "$CPU_JOBS" ]; then
+        JOBS=$MEM_BASED_JOBS
+        warn "Low memory: capping parallelism to -j${JOBS} (cpus=${CPU_JOBS}, avail≈$((MEM_AVAIL_KB/1024))MB). Override with JOBS=<n>."
+    else
+        JOBS=$CPU_JOBS
+    fi
+fi
+msg "Building with -j${JOBS}"
+
 msg "Starting Kernel Build for PIPA..."
 #记录开始时间以计算耗时
 #Record start time to calculate duration
@@ -107,7 +156,7 @@ BUILD_START=$(date +"%s")
 
 #编译主流程：输出同步到终端和错误日志
 #Main build process: sync output to terminal and error log
-make $MAKE_ARGS -j$(nproc --all) 2>&1 | tee error.log
+make $MAKE_ARGS -j"${JOBS}" 2>&1 | tee error.log
 
 BUILD_END=$(date +"%s")
 DIFF=$(($BUILD_END - $BUILD_START))
