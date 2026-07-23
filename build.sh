@@ -177,8 +177,8 @@ fi
 #Enter AnyKernel directory to package
 cd anykernel || { err "进入 anykernel 目录失败 / Failed to enter anykernel directory."; exit 1; }
 
-timestamp=$(date +"%Y%m%d_%H%M%S")
-ZIP_FILENAME="Kernel_n0_pipa_ak3_${timestamp}_${GIT_COMMIT_ID}.zip"
+timestamp=$(date)
+ZIP_FILENAME="Kernel_N0_pipa_A15_AOSP_MIUI_${timestamp}.zip"
 
 #优化 zip 参数并排除多余文件
 #Optimize zip parameters and exclude unnecessary files
