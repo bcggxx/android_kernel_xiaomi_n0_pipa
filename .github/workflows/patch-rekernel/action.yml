@@ -1,0 +1,23 @@
+name: 'Patch ReKernel for Kernel.'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Patch ReKernel
+      if: env.REKERNEL_ENABLE == 'true'
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        cd "$GITHUB_WORKSPACE"
+
+        cp ./.github/workflows/rekernel_patches.sh ./
+        bash rekernel_patches.sh
+
+        mkdir -p drivers/rekernel
+        cp ./.github/workflows/rekernel_extra.patch ./
+        patch -p1 < rekernel_extra.patch || true
+
+        echo "CONFIG_REKERNEL=y" >> "./arch/${KERNEL_ARCH:-arm64}/configs/${DEFCONFIG_NAME:-pipa_defconfig}"
+
+        echo "[+] Patched Re:Kernel for your kernel successfully."

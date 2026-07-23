@@ -13,6 +13,16 @@ on:
         required: true
         type: boolean
         default: true
+      enable_droidspaces:
+        description: '集成 Droidspaces / Integrate Droidspaces'
+        required: false
+        type: boolean
+        default: false
+      enable_rekernel:
+        description: '集成 ReKernel / Integrate ReKernel'
+        required: false
+        type: boolean
+        default: false
       publish_release:
         description: '发布 Release / Publish Release (需同时编译两个分支 / Requires both branches to be built)'
         required: false
@@ -102,8 +112,30 @@ jobs:
           tar -xzf clang.tar.gz -C ${{ github.workspace }}/clang
           echo "${{ github.workspace }}/clang/bin" >> $GITHUB_PATH
 
+      - name: Install coccinelle for Droidspaces patch
+        if: ${{ github.event.inputs.enable_droidspaces == 'true' }}
+        run: |
+          sudo apt update
+          sudo apt install -y coccinelle
+
       - name: Grant execute permission for build.sh
         run: chmod +x build.sh
+
+      - name: Setup patch options
+        run: |
+          echo "DROIDSPACES_ENABLE=${{ github.event.inputs.enable_droidspaces || 'false' }}" >> "$GITHUB_ENV"
+          echo "REKERNEL_ENABLE=${{ github.event.inputs.enable_rekernel || 'false' }}" >> "$GITHUB_ENV"
+          echo "KERNEL_ARCH=arm64" >> "$GITHUB_ENV"
+          echo "DEFCONFIG_NAME=pipa_defconfig" >> "$GITHUB_ENV"
+          echo "SUSFS_ENABLE=false" >> "$GITHUB_ENV"
+
+      - name: Apply Droidspaces patch
+        if: ${{ github.event.inputs.enable_droidspaces == 'true' }}
+        uses: ./.github/workflows/patch-droidspaces
+
+      - name: Apply ReKernel patch
+        if: ${{ github.event.inputs.enable_rekernel == 'true' }}
+        uses: ./.github/workflows/patch-rekernel
 
       - name: Build Kernel
         run: ./build.sh
