@@ -79,14 +79,23 @@ jobs:
       matrix:
         branch: ${{ fromJson(needs.prepare.outputs.branches) }}
     steps:
-      - name: Checkout code
+      - name: Checkout workflow source
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.ref_name }}
+          path: workflow-src
+
+      - name: Checkout build branch
         uses: actions/checkout@v7
         with:
           ref: ${{ matrix.branch }}
+          path: build-src
 
       - name: Set branch environment variable
         run: |
           echo "BRANCH=${{ matrix.branch }}" >> $GITHUB_ENV
+          echo "KERNEL_ROOT=${{ github.workspace }}/build-src" >> "$GITHUB_ENV"
+          echo "PATCH_ROOT=${{ github.workspace }}/workflow-src/.github/workflows" >> "$GITHUB_ENV"
 
       - name: Install Dependencies
         run: |
@@ -119,6 +128,7 @@ jobs:
           sudo apt install -y coccinelle
 
       - name: Grant execute permission for build.sh
+        working-directory: build-src
         run: chmod +x build.sh
 
       - name: Setup patch options
@@ -131,20 +141,21 @@ jobs:
 
       - name: Apply Droidspaces patch
         if: ${{ github.event.inputs.enable_droidspaces == 'true' }}
-        uses: ./.github/workflows/patch-droidspaces
+        uses: ./workflow-src/.github/workflows/patch-droidspaces
 
       - name: Apply ReKernel patch
         if: ${{ github.event.inputs.enable_rekernel == 'true' }}
-        uses: ./.github/workflows/patch-rekernel
+        uses: ./workflow-src/.github/workflows/patch-rekernel
 
       - name: Build Kernel
+        working-directory: build-src
         run: ./build.sh
 
       - name: Upload Kernel Zip
         uses: actions/upload-artifact@v7
         with:
           name: Kernel-Pipa-${{ matrix.branch }}-${{ github.run_number }}
-          path: '*.zip'
+          path: build-src/*.zip
           if-no-files-found: error
 
       - name: Upload Error Log
@@ -152,7 +163,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: build-error-log-${{ matrix.branch }}
-          path: error.log
+          path: build-src/error.log
 
   release:
     needs: [prepare, build]

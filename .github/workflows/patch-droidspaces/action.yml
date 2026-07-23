@@ -9,13 +9,16 @@ runs:
       run: |
         set -euo pipefail
 
-        cd "$GITHUB_WORKSPACE"
+        KERNEL_ROOT="${KERNEL_ROOT:-$GITHUB_WORKSPACE}"
+        PATCH_ROOT="${PATCH_ROOT:-$GITHUB_WORKSPACE/.github/workflows}"
+
+        cd "$KERNEL_ROOT"
 
         mkdir -p "arch/${KERNEL_ARCH:-arm64}/configs"
-        cp ./.github/workflows/droidspaces.config "./arch/${KERNEL_ARCH:-arm64}/configs/"
+        cp "$PATCH_ROOT/droidspaces.config" "./arch/${KERNEL_ARCH:-arm64}/configs/"
 
         cgroup_patch() {
-          cp ./.github/workflows/fix_restore_cgroup_file_prefix_handling.cocci ./
+          cp "$PATCH_ROOT/fix_restore_cgroup_file_prefix_handling.cocci" ./
           spatch --sp-file fix_restore_cgroup_file_prefix_handling.cocci --in-place "kernel/$CGROUP_FILE"
           echo "[+] cgroup.c Patched."
         }
@@ -25,7 +28,7 @@ runs:
         fi
 
         if [[ -f "net/netfilter/xt_qtaguid.c" ]]; then
-          cp ./.github/workflows/fix_kernel_panic_in_xt_qtaguid.cocci ./
+          cp "$PATCH_ROOT/fix_kernel_panic_in_xt_qtaguid.cocci" ./
           spatch --sp-file fix_kernel_panic_in_xt_qtaguid.cocci --in-place net/netfilter/xt_qtaguid.c
           echo "[+] xt_qtaguid.c Patched."
         else

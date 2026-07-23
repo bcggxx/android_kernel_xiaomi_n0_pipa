@@ -9,13 +9,16 @@ runs:
       run: |
         set -euo pipefail
 
-        cd "$GITHUB_WORKSPACE"
+        KERNEL_ROOT="${KERNEL_ROOT:-$GITHUB_WORKSPACE}"
+        PATCH_ROOT="${PATCH_ROOT:-$GITHUB_WORKSPACE/.github/workflows}"
 
-        cp ./.github/workflows/rekernel_patches.sh ./
+        cd "$KERNEL_ROOT"
+
+        cp "$PATCH_ROOT/rekernel_patches.sh" ./
         bash rekernel_patches.sh
 
         mkdir -p drivers/rekernel
-        cp ./.github/workflows/rekernel_extra.patch ./
+        cp "$PATCH_ROOT/rekernel_extra.patch" ./
         patch -p1 < rekernel_extra.patch || true
 
         echo "CONFIG_REKERNEL=y" >> "./arch/${KERNEL_ARCH:-arm64}/configs/${DEFCONFIG_NAME:-pipa_defconfig}"
