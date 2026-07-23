@@ -80,6 +80,33 @@ export PATH="$TOOLCHAIN_PATH:$PATH"
 
 MAKE_ARGS="ARCH=arm64 O=out CC=clang LLVM=1 LLVM_IAS=1 LD=ld.lld CROSS_COMPILE=aarch64-linux-android- CROSS_COMPILE_COMPAT=arm-linux-androideabi- AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip"
 
+#3.1 主机端 OpenSSL 头文件检测 / Host OpenSSL headers detection
+#部分环境未安装 libssl-dev，导致 scripts/extract-cert.c 等主机工具
+#编译时找不到 <openssl/bio.h>。此处优先使用系统头文件，缺失时回退到
+#预置的本地副本，避免构建在配置阶段即失败。
+#Some environments lack libssl-dev, which breaks host tools such as
+#scripts/extract-cert.c that include <openssl/bio.h>. Prefer the system
+#headers and fall back to a bundled local copy when they are missing.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LOCAL_SSL_INCLUDE="$SCRIPT_DIR/../.build-deps/ssl-usr/include"
+LOCAL_SSL_ARCH_INCLUDE="$SCRIPT_DIR/../.build-deps/ssl-usr/include/x86_64-linux-gnu"
+if [ ! -f /usr/include/openssl/bio.h ]; then
+    if [ -f "$LOCAL_SSL_INCLUDE/openssl/bio.h" ]; then
+        warn "未找到系统 openssl 头文件，使用本地副本 [$LOCAL_SSL_INCLUDE]" \
+            "System openssl headers not found. Using local copy at [$LOCAL_SSL_INCLUDE]."
+        #KBUILD_HOSTCFLAGS 在顶层 Makefile 中由 \$(HOSTCFLAGS) 拼接而成，
+        #故通过环境变量导出即可同时追加多个 -I 路径（含架构相关的 opensslconf.h）。
+        #KBUILD_HOSTCFLAGS is assembled from \$(HOSTCFLAGS) in the top-level
+        #Makefile, so exporting it lets us append multiple -I paths at once,
+        #including the arch-specific opensslconf.h location.
+        export HOSTCFLAGS="-I$LOCAL_SSL_INCLUDE -I$LOCAL_SSL_ARCH_INCLUDE"
+    else
+        err "未找到 OpenSSL 头文件，请安装 libssl-dev 或将头文件放入 .build-deps/ssl-usr" \
+           "OpenSSL headers not found. Install libssl-dev or place headers under .build-deps/ssl-usr."
+        exit 1
+    fi
+fi
+
 #检查 Clang 版本 / Check Clang version
 msg "检查 Clang 版本 / Checking Clang version:"
 clang --version
@@ -108,7 +135,7 @@ if [ -d "anykernel/.git" ]; then
 else
     #删除不完整的目录并重新克隆
     #Remove incomplete directory and re-clone
-    rm -rf anykernel  
+    rm -rf anykernel
     msg "为 pipa 克隆 AnyKernel3 / Cloning AnyKernel3 for pipa..."
     git clone https://github.com/bcggxx/AnyKernel3 -b n0-A15 --single-branch --depth=1 anykernel
 fi
@@ -116,6 +143,31 @@ fi
 #6.开始编译 / Start compilation
 msg "为 PIPA 配置 (pipa_defconfig) / Configuring for PIPA (pipa_defconfig)..."
 make $MAKE_ARGS pipa_defconfig
+
+#6.1 按内存动态计算并行度 / Compute parallelism based on available memory
+#本工具链启用 thin-LTO + polly，单个 clang 进程峰值约 1.5~2GB。
+#直接使用 -j$(nproc) 在低内存机器上会因并行 clang 实例过多导致 OOM /
+#段错误（exit 139）。这里按可用内存估算安全的 -j，并允许通过 JOBS 环境变量覆盖。
+#The toolchain enables thin-LTO + polly; each clang process peaks at ~1.5-2GB.
+#Using -j$(nproc) on low-memory hosts triggers OOM / segfault (exit 139) under
+#parallel load. Estimate a safe -j from available memory; allow override via JOBS.
+if [ -z "${JOBS:-}" ]; then
+    MEM_AVAIL_KB=$(awk '/MemAvailable:/ {print $2; exit}' /proc/meminfo 2>/dev/null || echo 0)
+    SWAP_FREE_KB=$(awk '/SwapFree:/ {print $2; exit}' /proc/meminfo 2>/dev/null || echo 0)
+    #每作业预算 1500000 KB（约 1.5GB），向下取整，至少 1
+    #Per-job budget ~1.5GB; floor to an integer, minimum 1
+    MEM_BASED_JOBS=$(( (MEM_AVAIL_KB + SWAP_FREE_KB) / 1500000 ))
+    [ "$MEM_BASED_JOBS" -lt 1 ] && MEM_BASED_JOBS=1
+    CPU_JOBS=$(nproc --all)
+    if [ "$MEM_BASED_JOBS" -lt "$CPU_JOBS" ]; then
+        JOBS=$MEM_BASED_JOBS
+        warn "内存不足：并行度限制为 -j${JOBS}（cpus=${CPU_JOBS}，可用≈$((MEM_AVAIL_KB/1024))MB），可用 JOBS=<n> 覆盖" \
+            "Low memory: capping parallelism to -j${JOBS} (cpus=${CPU_JOBS}, avail≈$((MEM_AVAIL_KB/1024))MB). Override with JOBS=<n>."
+    else
+        JOBS=$CPU_JOBS
+    fi
+fi
+msg "使用 -j${JOBS} 编译 / Building with -j${JOBS}"
 
 msg "开始为 PIPA 编译内核 / Starting Kernel Build for PIPA..."
 #记录开始时间以计算耗时
@@ -127,7 +179,7 @@ BUILD_START=$(date +"%s")
 #临时关闭 set -e，以便捕获 make 的退出码并给出友好提示
 #Temporarily disable set -e to capture make's exit code and show friendly message
 set +e
-make $MAKE_ARGS -j$(nproc --all) 2>&1 | tee error.log
+make $MAKE_ARGS -j"${JOBS}" 2>&1 | tee error.log
 MAKE_EXIT_CODE=${PIPESTATUS[0]}
 set -e
 
@@ -177,7 +229,7 @@ fi
 #Enter AnyKernel directory to package
 cd anykernel || { err "进入 anykernel 目录失败 / Failed to enter anykernel directory."; exit 1; }
 
-timestamp=$(date)
+timestamp=$(date +%Y%m%d)
 ZIP_FILENAME="Kernel_N0_pipa_A15_AOSP_MIUI_${timestamp}.zip"
 
 #优化 zip 参数并排除多余文件
