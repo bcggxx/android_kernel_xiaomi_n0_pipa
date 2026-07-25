@@ -19,6 +19,7 @@ A non-GKI kernel build project based on the **Xiaomi SM8250** platform, integrat
 
 - [🏆 Why Choose Us](#why-choose-us)
 - [📦 Project Description](#project-description)
+- [🌿 Branches](#branches)
 - [⚙️ ReKernel Usage Notes](#rekernel-usage-notes)
 - [🚀 Quick Start](#quick-start)
   - [Building a Kernel Without Root](#building-a-kernel-without-root)
@@ -49,6 +50,22 @@ A non-GKI kernel build project based on the **Xiaomi SM8250** platform, integrat
 - [**ReSukiSU**](https://github.com/ReSukiSU/ReSukiSU/) — A more stable fork of SukiSU. SukiSU itself is a powerful kernel-level Root solution that makes no compromises on security; ReSukiSU further improves stability on top of that foundation.
 - [**SuSFS**](https://gitlab.com/simonpunk/susfs4ksu/) — A root-hiding kernel patch and userspace module designed for KernelSU, effectively bypassing root detection by apps.
 - [**ReKernel**](https://github.com/Sakion-Team/Re-Kernel/) — Committed to providing a smoother and more stable user experience, especially for users who freeze background apps.
+
+## 🌿 Branches
+
+This repository uses a **stable + testing** dual-track maintenance strategy:
+
+| Branch | Purpose | Android Version | Status |
+| --- | --- | --- | --- |
+| `n0-A15` | Stable build (AOSP / MIUI) | Android 15 | ✅ Stable |
+| `n0-A16` | Stable build (AOSP / MIUI) | Android 16 | ✅ Stable |
+| `staging` | A15 feature validation | Android 15 | 🧪 Testing |
+| `pipa-bpf` | A16 feature validation (with PSI + BPF) | Android 16 | 🧪 Testing |
+
+> [!TIP]
+> - **Production / daily flashing**: choose the `n0-A15` or `n0-A16` stable branch.
+> - **Trying new features**: track the `staging` / `pipa-bpf` testing branches, but stability is not guaranteed.
+> - New features are validated on testing branches before being merged into the corresponding stable branch.
 
 ## ⚙️ ReKernel Usage Notes
 
