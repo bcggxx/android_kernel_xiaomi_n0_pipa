@@ -60,7 +60,7 @@ This repository uses a **stable + testing** dual-track maintenance strategy:
 | `n0-A15` | Stable build (AOSP / MIUI) | Android 15 | ✅ Stable |
 | `n0-A16` | Stable build (AOSP / MIUI) | Android 16 | ✅ Stable |
 | `staging` | A15 feature validation | Android 15 | 🧪 Testing |
-| `pipa-bpf` | A16 feature validation (with PSI + BPF) | Android 16 | 🧪 Testing |
+| `pipa-bpf` | A16 feature validation | Android 16 | 🧪 Testing |
 
 > [!TIP]
 > - **Production / daily flashing**: choose the `n0-A15` or `n0-A16` stable branch.

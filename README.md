@@ -60,7 +60,7 @@
 | `n0-A15` | 稳定构建（AOSP / MIUI） | Android 15 | ✅ 稳定 |
 | `n0-A16` | 稳定构建（AOSP / MIUI） | Android 16 | ✅ 稳定 |
 | `staging` | A15 新特性验证 | Android 15 | 🧪 测试 |
-| `pipa-bpf` | A16 新特性验证（含 PSI + BPF） | Android 16 | 🧪 测试 |
+| `pipa-bpf` | A16 新特性验证 | Android 16 | 🧪 测试 |
 
 > [!TIP]
 > - **生产使用 / 日常刷机**：请选择 `n0-A15` 或 `n0-A16` 稳定分支。
