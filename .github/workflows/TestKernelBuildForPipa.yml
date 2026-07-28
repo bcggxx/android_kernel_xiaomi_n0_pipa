@@ -10,6 +10,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
 
+      - name: Record build start time
+        id: build_start
+        run: echo "start=$(date +%s)" >> "$GITHUB_OUTPUT"
+
       - name: Set branch environment variable
         run: |
           BRANCH="${{ github.ref_name }}"
@@ -58,3 +62,45 @@ jobs:
         with:
           name: test-error-log-${{ github.ref_name }}
           path: error.log
+
+      - name: Send Telegram notification
+        if: always()
+        continue-on-error: true
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          END=$(date +%s)
+          START="${{ steps.build_start.outputs.start }}"
+          DURATION=$((END - ${START:-END}))
+          HOURS=$((DURATION / 3600))
+          MINS=$(((DURATION % 3600) / 60))
+          SECS=$((DURATION % 60))
+          DURATION_FMT=$(printf "%02d:%02d:%02d" $HOURS $MINS $SECS)
+
+          REPO="${{ github.repository }}"
+          REPO_URL="https://github.com/${REPO}"
+          RUN_URL="https://github.com/${REPO}/actions/runs/${{ github.run_id }}"
+          COMMIT_SHA="${{ github.sha }}"
+          SHORT_SHA="${COMMIT_SHA:0:7}"
+          COMMIT_URL="https://github.com/${REPO}/commit/${COMMIT_SHA}"
+          BRANCH="${{ github.ref_name }}"
+          RUN_NUMBER="${{ github.run_number }}"
+
+          if [ "${{ job.status }}" == "success" ]; then
+            STATUS="Build Success"
+          else
+            STATUS="Build Failed"
+          fi
+
+          MESSAGE="${STATUS}
+Repository: <a href=\"${REPO_URL}\">${REPO}</a>
+Branch: ${BRANCH}
+Duration: ${DURATION_FMT}
+Actions: <a href=\"${RUN_URL}\">#${RUN_NUMBER}</a>
+Commit: <a href=\"${COMMIT_URL}\">${SHORT_SHA}</a>"
+
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            --data-urlencode chat_id="${TELEGRAM_CHAT_ID}" \
+            --data-urlencode parse_mode=HTML \
+            --data-urlencode text="${MESSAGE}"
