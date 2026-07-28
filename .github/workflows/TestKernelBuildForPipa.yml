@@ -86,15 +86,19 @@ jobs:
           COMMIT_URL="https://github.com/${REPO}/commit/${COMMIT_SHA}"
           BRANCH="${{ github.ref_name }}"
           RUN_NUMBER="${{ github.run_number }}"
+          ACTOR="${{ github.actor }}"
+
+          COMMIT_MSG=$(git log -1 --pretty=format:'%s' "${COMMIT_SHA}" 2>/dev/null | head -c 120)
+          [ -z "$COMMIT_MSG" ] && COMMIT_MSG="(no message)"
 
           if [ "${{ job.status }}" == "success" ]; then
-            STATUS="Build Success"
+            STATUS="🟢 Build Success"
           else
-            STATUS="Build Failed"
+            STATUS="🔴 Build Failed"
           fi
 
-          printf -v MESSAGE '%s\nRepository: <a href="%s">%s</a>\nBranch: %s\nDuration: %s\nActions: <a href="%s">#%s</a>\nCommit: <a href="%s">%s</a>' \
-            "$STATUS" "$REPO_URL" "$REPO" "$BRANCH" "$DURATION_FMT" "$RUN_URL" "$RUN_NUMBER" "$COMMIT_URL" "$SHORT_SHA"
+          printf -v MESSAGE '%s\nRepository: <a href="%s">%s</a>\nBranch: %s\nDuration: %s\nActions: <a href="%s">#%s</a>\nCommit: <a href="%s">%s</a> %s\nCommitter: %s' \
+            "$STATUS" "$REPO_URL" "$REPO" "$BRANCH" "$DURATION_FMT" "$RUN_URL" "$RUN_NUMBER" "$COMMIT_URL" "$SHORT_SHA" "$COMMIT_MSG" "$ACTOR"
 
           curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
             --data-urlencode chat_id="${TELEGRAM_CHAT_ID}" \
