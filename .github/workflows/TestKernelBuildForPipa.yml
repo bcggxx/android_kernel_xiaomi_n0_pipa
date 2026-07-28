@@ -93,12 +93,8 @@ jobs:
             STATUS="Build Failed"
           fi
 
-          MESSAGE="${STATUS}
-Repository: <a href=\"${REPO_URL}\">${REPO}</a>
-Branch: ${BRANCH}
-Duration: ${DURATION_FMT}
-Actions: <a href=\"${RUN_URL}\">#${RUN_NUMBER}</a>
-Commit: <a href=\"${COMMIT_URL}\">${SHORT_SHA}</a>"
+          printf -v MESSAGE '%s\nRepository: <a href="%s">%s</a>\nBranch: %s\nDuration: %s\nActions: <a href="%s">#%s</a>\nCommit: <a href="%s">%s</a>' \
+            "$STATUS" "$REPO_URL" "$REPO" "$BRANCH" "$DURATION_FMT" "$RUN_URL" "$RUN_NUMBER" "$COMMIT_URL" "$SHORT_SHA"
 
           curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
             --data-urlencode chat_id="${TELEGRAM_CHAT_ID}" \
