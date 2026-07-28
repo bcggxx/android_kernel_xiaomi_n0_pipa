@@ -220,10 +220,18 @@ jobs:
                 --data-urlencode text="${MESSAGE}"
             fi
           else
-            curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
-              --data-urlencode chat_id="${TELEGRAM_CHAT_ID}" \
-              --data-urlencode parse_mode=HTML \
-              --data-urlencode text="${MESSAGE}"
+            if [ -f build-src/error.log ]; then
+              curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument" \
+                --data-urlencode chat_id="${TELEGRAM_CHAT_ID}" \
+                --data-urlencode parse_mode=HTML \
+                --data-urlencode caption="${MESSAGE}" \
+                -F "document=@build-src/error.log"
+            else
+              curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+                --data-urlencode chat_id="${TELEGRAM_CHAT_ID}" \
+                --data-urlencode parse_mode=HTML \
+                --data-urlencode text="${MESSAGE}"
+            fi
           fi
 
   release:
