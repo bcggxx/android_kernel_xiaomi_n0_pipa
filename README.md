@@ -19,7 +19,6 @@
 
 - [🏆 为什么选择我们](#为什么选择我们)
 - [📦 项目说明](#项目说明)
-- [🌿 分支说明](#分支说明)
 - [⚙️ ReKernel 使用说明](#rekernel-使用说明)
 - [🚀 快速开始](#快速开始)
   - [构建无 Root 内核](#构建无-root-内核)
@@ -50,22 +49,6 @@
 - [**ReSukiSU**](https://github.com/ReSukiSU/ReSukiSU/) — 一个更加稳定的 SukiSU 分支。SukiSU 本身是强大的内核级 Root 权限方案，在安全性上毫不让步；ReSukiSU 则在此基础上进一步提升了稳定性。
 - [**SuSFS**](https://gitlab.com/simonpunk/susfs4ksu/) — 面向 KernelSU 的 Root 隐藏内核补丁及用户空间模块，能够有效绕过应用对 Root 的检测。
 - [**ReKernel**](https://github.com/Sakion-Team/Re-Kernel/) — 致力于为墓碑用户提供更流畅、更稳定的使用体验。
-
-## 🌿 分支说明
-
-本仓库采用 **稳定分支 + 测试分支** 双轨维护策略：
-
-| 分支 | 用途 | Android 版本 | 状态 |
-| --- | --- | --- | --- |
-| `n0-A15` | 稳定构建（AOSP / MIUI） | Android 15 | ✅ 稳定 |
-| `n0-A16` | 稳定构建（AOSP / MIUI） | Android 16 | ✅ 稳定 |
-| `staging` | A15 新特性验证 | Android 15 | 🧪 测试 |
-| `pipa-bpf` | A16 新特性验证 | Android 16 | 🧪 测试 |
-
-> [!TIP]
-> - **生产使用 / 日常刷机**：请选择 `n0-A15` 或 `n0-A16` 稳定分支。
-> - **尝鲜新特性**：可跟踪 `staging` / `pipa-bpf` 测试分支，但不保证稳定性。
-> - 新特性先在测试分支验证通过后，才会合入对应的稳定分支。
 
 ## ⚙️ ReKernel 使用说明
 
