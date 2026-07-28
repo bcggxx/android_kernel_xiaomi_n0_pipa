@@ -209,9 +209,9 @@ jobs:
             ZIP_FILE=$(ls build-src/*.zip 2>/dev/null | head -1)
             if [ -n "$ZIP_FILE" ]; then
               curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument" \
-                --data-urlencode chat_id="${TELEGRAM_CHAT_ID}" \
-                --data-urlencode parse_mode=HTML \
-                --data-urlencode caption="${MESSAGE}" \
+                -F chat_id="${TELEGRAM_CHAT_ID}" \
+                -F parse_mode=HTML \
+                -F caption="${MESSAGE}" \
                 -F "document=@${ZIP_FILE}"
             else
               curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
@@ -222,9 +222,9 @@ jobs:
           else
             if [ -f build-src/error.log ]; then
               curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument" \
-                --data-urlencode chat_id="${TELEGRAM_CHAT_ID}" \
-                --data-urlencode parse_mode=HTML \
-                --data-urlencode caption="${MESSAGE}" \
+                -F chat_id="${TELEGRAM_CHAT_ID}" \
+                -F parse_mode=HTML \
+                -F caption="${MESSAGE}" \
                 -F "document=@build-src/error.log"
             else
               curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
