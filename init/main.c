@@ -92,6 +92,8 @@
 #include <linux/rodata_test.h>
 #include <linux/jump_label.h>
 #include <linux/mem_encrypt.h>
+#include <linux/hrtimer.h>
+#include <linux/workqueue.h>
 
 #include <asm/io.h>
 #include <asm/bugs.h>
@@ -687,6 +689,8 @@ asmlinkage __visible void __init start_kernel(void)
 	early_boot_irqs_disabled = false;
 	local_irq_enable();
 
+	boot_timeout_watchdog_init();
+
 	kmem_cache_init_late();
 
 	/*
@@ -1097,6 +1101,59 @@ static inline void mark_readonly(void)
 }
 #endif
 
+/*
+ * Boot timeout watchdog
+ *
+ * Arms a 30s timer early in start_kernel(). If the kernel has not reached
+ * SYSTEM_RUNNING before the timer fires, the system is rebooted into the
+ * bootloader (fastboot) so that a stalled boot can be investigated.
+ *
+ * The reboot is performed from a workqueue context via kernel_restart(),
+ * which is not safe in interrupt context. Stalls that occur before
+ * rest_init() brings up the workqueue worker are therefore not covered
+ * by this watchdog and rely on an external hardware watchdog instead.
+ */
+#define BOOT_TIMEOUT_SECONDS	30
+
+static struct hrtimer boot_timeout_timer;
+static struct work_struct boot_timeout_work;
+static bool boot_timeout_armed;
+
+static void boot_timeout_restart(struct work_struct *work)
+{
+	pr_emerg("Boot timeout: rebooting into bootloader (fastboot)\n");
+	kernel_restart("bootloader");
+}
+
+static enum hrtimer_restart boot_timeout_fn(struct hrtimer *timer)
+{
+	pr_emerg("Boot watchdog: %ds timeout reached, scheduling reboot\n",
+		 BOOT_TIMEOUT_SECONDS);
+	schedule_work(&boot_timeout_work);
+	return HRTIMER_NORESTART;
+}
+
+static void __init boot_timeout_watchdog_init(void)
+{
+	INIT_WORK(&boot_timeout_work, boot_timeout_restart);
+	hrtimer_init(&boot_timeout_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+	boot_timeout_timer.function = boot_timeout_fn;
+	hrtimer_start(&boot_timeout_timer,
+		      ktime_set(BOOT_TIMEOUT_SECONDS, 0), HRTIMER_MODE_REL);
+	boot_timeout_armed = true;
+	pr_info("Boot watchdog armed: will reboot to bootloader if boot exceeds %ds\n",
+		BOOT_TIMEOUT_SECONDS);
+}
+
+static void boot_timeout_watchdog_cancel(void)
+{
+	if (boot_timeout_armed) {
+		hrtimer_cancel(&boot_timeout_timer);
+		boot_timeout_armed = false;
+		pr_info("Boot watchdog disarmed, boot completed in time\n");
+	}
+}
+
 static int __ref kernel_init(void *unused)
 {
 	int ret;
@@ -1116,6 +1173,7 @@ static int __ref kernel_init(void *unused)
 	pti_finalize();
 
 	system_state = SYSTEM_RUNNING;
+	boot_timeout_watchdog_cancel();
 	numa_default_policy();
 
 	rcu_end_inkernel_boot();
