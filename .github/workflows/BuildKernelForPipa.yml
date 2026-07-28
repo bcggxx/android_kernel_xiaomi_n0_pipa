@@ -205,10 +205,26 @@ jobs:
           printf -v MESSAGE '%s\nRepository: <a href="%s">%s</a>\nBranch: %s\nDuration: %s\nActions: <a href="%s">#%s</a>\nCommit: <a href="%s">%s</a> %s' \
             "$STATUS" "$REPO_URL" "$REPO" "$BRANCH" "$DURATION_FMT" "$RUN_URL" "$RUN_NUMBER" "$COMMIT_URL" "$SHORT_SHA" "$COMMIT_MSG"
 
-          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
-            --data-urlencode chat_id="${TELEGRAM_CHAT_ID}" \
-            --data-urlencode parse_mode=HTML \
-            --data-urlencode text="${MESSAGE}"
+          if [ "${{ job.status }}" == "success" ]; then
+            ZIP_FILE=$(ls build-src/*.zip 2>/dev/null | head -1)
+            if [ -n "$ZIP_FILE" ]; then
+              curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument" \
+                --data-urlencode chat_id="${TELEGRAM_CHAT_ID}" \
+                --data-urlencode parse_mode=HTML \
+                --data-urlencode caption="${MESSAGE}" \
+                -F "document=@${ZIP_FILE}"
+            else
+              curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+                --data-urlencode chat_id="${TELEGRAM_CHAT_ID}" \
+                --data-urlencode parse_mode=HTML \
+                --data-urlencode text="${MESSAGE}"
+            fi
+          else
+            curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+              --data-urlencode chat_id="${TELEGRAM_CHAT_ID}" \
+              --data-urlencode parse_mode=HTML \
+              --data-urlencode text="${MESSAGE}"
+          fi
 
   release:
     needs: [prepare, build]
