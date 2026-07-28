@@ -3,13 +3,13 @@ name: Build Kernel For Pipa
 on:
   workflow_dispatch:
     inputs:
-      build_staging:
-        description: '编译 staging 分支 / Build staging branch'
+      build_n0_a15:
+        description: '编译 n0-A15 分支 / Build n0-A15 branch'
         required: true
         type: boolean
         default: true
-      build_pipa_bpf:
-        description: '编译 pipa-bpf 分支 / Build pipa-bpf branch'
+      build_n0_a16:
+        description: '编译 n0-A16 分支 / Build n0-A16 branch'
         required: true
         type: boolean
         default: true
@@ -42,17 +42,17 @@ jobs:
       - id: set-matrix
         run: |
           BRANCHES="[]"
-          if [ "${{ github.event.inputs.build_staging }}" == "true" ]; then
-            BRANCHES=$(echo "$BRANCHES" | jq -c '. + ["staging"]')
+          if [ "${{ github.event.inputs.build_n0_a15 }}" == "true" ]; then
+            BRANCHES=$(echo "$BRANCHES" | jq -c '. + ["n0-A15"]')
           fi
-          if [ "${{ github.event.inputs.build_pipa_bpf }}" == "true" ]; then
-            BRANCHES=$(echo "$BRANCHES" | jq -c '. + ["pipa-bpf"]')
+          if [ "${{ github.event.inputs.build_n0_a16 }}" == "true" ]; then
+            BRANCHES=$(echo "$BRANCHES" | jq -c '. + ["n0-A16"]')
           fi
           echo "branches=$BRANCHES" >> $GITHUB_OUTPUT
 
           if [ "${{ github.event.inputs.publish_release }}" == "true" ] && \
-             [ "${{ github.event.inputs.build_staging }}" == "true" ] && \
-             [ "${{ github.event.inputs.build_pipa_bpf }}" == "true" ]; then
+             [ "${{ github.event.inputs.build_n0_a15 }}" == "true" ] && \
+             [ "${{ github.event.inputs.build_n0_a16 }}" == "true" ]; then
             echo "should_release=true" >> $GITHUB_OUTPUT
           else
             echo "should_release=false" >> $GITHUB_OUTPUT
@@ -65,8 +65,8 @@ jobs:
             exit 1
           fi
           if [ "${{ github.event.inputs.publish_release }}" == "true" ]; then
-            if [ "${{ github.event.inputs.build_staging }}" != "true" ] || \
-               [ "${{ github.event.inputs.build_pipa_bpf }}" != "true" ]; then
+            if [ "${{ github.event.inputs.build_n0_a15 }}" != "true" ] || \
+               [ "${{ github.event.inputs.build_n0_a16 }}" != "true" ]; then
               echo "::error::发布 Release 需要同时编译两个分支 / Publishing release requires both branches to be built"
               exit 1
             fi
@@ -229,7 +229,7 @@ Commit: <a href=\"${COMMIT_URL}\">${SHORT_SHA}</a>"
           body: |
             自动构建的内核包 / Auto-built kernel zips
 
-            分支/Branches: staging, pipa-bpf
+            分支/Branches: n0-A15, n0-A16
             构建编号/Build: #${{ github.run_number }}
             No Root/无Root
           files: artifacts/**/*.zip
