@@ -78,7 +78,7 @@ fi
 msg "工具链路径 / TOOLCHAIN_PATH: [$TOOLCHAIN_PATH]"
 export PATH="$TOOLCHAIN_PATH:$PATH"
 
-MAKE_ARGS="ARCH=arm64 O=out CC=clang LLVM=1 LLVM_IAS=1 LD=ld.lld CROSS_COMPILE=aarch64-linux-android- CROSS_COMPILE_COMPAT=arm-linux-androideabi- AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip"
+MAKE_ARGS="ARCH=arm64 O=out CC=clang LLVM=1 LLVM_IAS=1 LD=ld.lld CROSS_COMPILE=aarch64-linux-android- AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip"
 
 #3.1 主机端 OpenSSL 头文件检测 / Host OpenSSL headers detection
 #部分环境未安装 libssl-dev，导致 scripts/extract-cert.c 等主机工具
