@@ -62,6 +62,7 @@ struct workqueue_struct;
 struct iov_iter;
 struct fscrypt_info;
 struct fscrypt_operations;
+struct fs_context;
 struct fsverity_info;
 struct fsverity_operations;
 
