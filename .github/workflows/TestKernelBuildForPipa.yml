@@ -47,6 +47,8 @@ jobs:
         run: chmod +x build.sh
 
       - name: Build Kernel (Test)
+        env:
+          KERNEL_ZIP_TAG: test
         run: ./build.sh
 
       - name: Upload Kernel Zip
