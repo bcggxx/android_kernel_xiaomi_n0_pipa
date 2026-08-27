@@ -945,40 +945,54 @@ static struct mount *skip_mnt_tree(struct mount *p)
 	return p;
 }
 
-struct vfsmount *vfs_kern_mount(struct file_system_type *type,
-				int flags, const char *name,
-				void *data)
+/**
+ * vfs_create_mount - Create a mount for a configured superblock
+ * @fc: The configuration context with the superblock attached
+ *
+ * Create a mount to an already configured superblock.  If necessary, the
+ * caller should invoke vfs_get_tree() before calling this.
+ *
+ * Note: This does not attach the mount to anything.
+ */
+struct vfsmount *vfs_create_mount(struct fs_context *fc)
 {
-	struct fs_context *fc;
 	struct mount *mnt;
-	int ret = 0;
+
+	if (!fc->root)
+		return ERR_PTR(-EINVAL);
+
+	mnt = alloc_vfsmnt(fc->source ?: "none");
+	if (!mnt)
+		return ERR_PTR(-ENOMEM);
+
+	if (fc->sb_flags & SB_KERNMOUNT)
+		mnt->mnt.mnt_flags = MNT_INTERNAL;
+
+	atomic_inc(&fc->root->d_sb->s_active);
+	mnt->mnt.mnt_sb		= fc->root->d_sb;
+	mnt->mnt.mnt_root	= dget(fc->root);
+	mnt->mnt.mnt_mountpoint	= mnt->mnt.mnt_root;
+	mnt->mnt.mnt_parent	= mnt;
+
+	lock_mount_hash();
+	list_add_tail(&mnt->mnt_instance, &mnt->mnt.mnt_sb->s_mounts);
+	unlock_mount_hash();
+	return &mnt->mnt;
+}
+EXPORT_SYMBOL(vfs_create_mount);
+
+struct vfsmount *
+vfs_kern_mount(struct file_system_type *type, int flags, const char *name, void *data)
+{
+	struct mount *mnt;
+	struct dentry *root;
 
 	if (!type)
 		return ERR_PTR(-ENODEV);
 
-	fc = fs_context_for_mount(type, flags);
-	if (IS_ERR(fc))
-		return ERR_CAST(fc);
-
-	if (name) {
-		fc->source = kstrdup(name, GFP_KERNEL);
-		if (!fc->source)
-			ret = -ENOMEM;
-	}
-	if (!ret)
-		ret = parse_monolithic_mount_data(fc, data);
-	if (!ret)
-		ret = vfs_get_tree(fc);
-	if (ret) {
-		put_fs_context(fc);
-		return ERR_PTR(ret);
-	}
-	up_write(&fc->root->d_sb->s_umount);
 	mnt = alloc_vfsmnt(name);
-	if (!mnt) {
-		put_fs_context(fc);
+	if (!mnt)
 		return ERR_PTR(-ENOMEM);
-	}
 
 	if (type->alloc_mnt_data) {
 		mnt->mnt.data = type->alloc_mnt_data();
@@ -991,15 +1005,20 @@ struct vfsmount *vfs_kern_mount(struct file_system_type *type,
 	if (flags & SB_KERNMOUNT)
 		mnt->mnt.mnt_flags = MNT_INTERNAL;
 
-	atomic_inc(&fc->root->d_sb->s_active);
-	mnt->mnt.mnt_root = dget(fc->root);
-	mnt->mnt.mnt_sb = fc->root->d_sb;
+	root = mount_fs(type, flags, name, &mnt->mnt, data);
+	if (IS_ERR(root)) {
+		mnt_free_id(mnt);
+		free_vfsmnt(mnt);
+		return ERR_CAST(root);
+	}
+
+	mnt->mnt.mnt_root = root;
+	mnt->mnt.mnt_sb = root->d_sb;
 	mnt->mnt_mountpoint = mnt->mnt.mnt_root;
 	mnt->mnt_parent = mnt;
 	lock_mount_hash();
-	list_add_tail(&mnt->mnt_instance, &fc->root->d_sb->s_mounts);
+	list_add_tail(&mnt->mnt_instance, &root->d_sb->s_mounts);
 	unlock_mount_hash();
-	put_fs_context(fc);
 	return &mnt->mnt;
 }
 EXPORT_SYMBOL_GPL(vfs_kern_mount);
@@ -2294,33 +2313,6 @@ static int change_mount_flags(struct vfsmount *mnt, int ms_flags)
 	return error;
 }
 
-static bool can_change_locked_flags(struct mount *mnt, unsigned int mnt_flags)
-{
-	unsigned int fl = mnt->mnt.mnt_flags;
-
-	if ((fl & MNT_LOCK_READONLY) &&
-	    !(mnt_flags & MNT_READONLY))
-		return false;
-
-	if ((fl & MNT_LOCK_NODEV) &&
-	    !(mnt_flags & MNT_NODEV))
-		return false;
-
-	if ((fl & MNT_LOCK_NOSUID) &&
-	    !(mnt_flags & MNT_NOSUID))
-		return false;
-
-	if ((fl & MNT_LOCK_NOEXEC) &&
-	    !(mnt_flags & MNT_NOEXEC))
-		return false;
-
-	if ((fl & MNT_LOCK_ATIME) &&
-	    ((fl & MNT_ATIME_MASK) != (mnt_flags & MNT_ATIME_MASK)))
-		return false;
-
-	return true;
-}
-
 /*
  * change filesystem flags. dir should be a physical root of filesystem.
  * If you've mounted a non-root directory somewhere and want to do remount
@@ -2332,7 +2324,7 @@ static int do_remount(struct path *path, int ms_flags, int sb_flags,
 	int err;
 	struct super_block *sb = path->mnt->mnt_sb;
 	struct mount *mnt = real_mount(path->mnt);
-	struct fs_context *fc;
+	struct security_mnt_opts opts;
 
 	if (!check_mnt(mnt))
 		return -EINVAL;
@@ -2340,39 +2332,65 @@ static int do_remount(struct path *path, int ms_flags, int sb_flags,
 	if (path->dentry != path->mnt->mnt_root)
 		return -EINVAL;
 
-	if (!can_change_locked_flags(mnt, mnt_flags))
+	/* Don't allow changing of locked mnt flags.
+	 *
+	 * No locks need to be held here while testing the various
+	 * MNT_LOCK flags because those flags can never be cleared
+	 * once they are set.
+	 */
+	if ((mnt->mnt.mnt_flags & MNT_LOCK_READONLY) &&
+	    !(mnt_flags & MNT_READONLY)) {
 		return -EPERM;
-
-	fc = fs_context_for_reconfigure(path->dentry, sb_flags, MS_RMT_MASK);
-	if (IS_ERR(fc))
-		return PTR_ERR(fc);
-
-	fc->oldapi = true;
-	err = parse_monolithic_mount_data(fc, data);
-	if (!err) {
-		down_write(&sb->s_umount);
-		err = -EPERM;
-		if (ns_capable(sb->s_user_ns, CAP_SYS_ADMIN)) {
-			err = reconfigure_super(fc);
-			if (!err && sb->s_op->update_mnt_data) {
-				sb->s_op->update_mnt_data(mnt->mnt.data, fc);
-				lock_mount_hash();
-				set_mount_attributes(mnt, mnt_flags);
-				unlock_mount_hash();
-				namespace_lock();
-				lock_mount_hash();
-				propagate_remount(mnt);
-				unlock_mount_hash();
-				namespace_unlock();
-			} else if (!err) {
-				lock_mount_hash();
-				set_mount_attributes(mnt, mnt_flags);
-				unlock_mount_hash();
-			}
-		}
-		up_write(&sb->s_umount);
 	}
-	put_fs_context(fc);
+	if ((mnt->mnt.mnt_flags & MNT_LOCK_NODEV) &&
+	    !(mnt_flags & MNT_NODEV)) {
+		return -EPERM;
+	}
+	if ((mnt->mnt.mnt_flags & MNT_LOCK_NOSUID) &&
+	    !(mnt_flags & MNT_NOSUID)) {
+		return -EPERM;
+	}
+	if ((mnt->mnt.mnt_flags & MNT_LOCK_NOEXEC) &&
+	    !(mnt_flags & MNT_NOEXEC)) {
+		return -EPERM;
+	}
+	if ((mnt->mnt.mnt_flags & MNT_LOCK_ATIME) &&
+	    ((mnt->mnt.mnt_flags & MNT_ATIME_MASK) != (mnt_flags & MNT_ATIME_MASK))) {
+		return -EPERM;
+	}
+
+	security_init_mnt_opts(&opts);
+	if (data && !(sb->s_type->fs_flags & FS_BINARY_MOUNTDATA)) {
+		err = security_sb_eat_lsm_opts(data, &opts);
+		if (err)
+			return err;
+	}
+	err = security_sb_remount(sb, &opts);
+	security_free_mnt_opts(&opts);
+	if (err)
+		return err;
+
+	down_write(&sb->s_umount);
+	if (ms_flags & MS_BIND)
+		err = change_mount_flags(path->mnt, ms_flags);
+	else if (!ns_capable(sb->s_user_ns, CAP_SYS_ADMIN))
+		err = -EPERM;
+	else {
+		err = do_remount_sb2(path->mnt, sb, sb_flags, data, 0);
+		namespace_lock();
+		lock_mount_hash();
+		propagate_remount(mnt);
+		unlock_mount_hash();
+		namespace_unlock();
+	}
+	if (!err) {
+		lock_mount_hash();
+		mnt_flags |= mnt->mnt.mnt_flags & ~MNT_USER_SETTABLE_MASK;
+		mnt->mnt.mnt_flags = mnt_flags;
+		touch_mnt_namespace(mnt->mnt_ns);
+		unlock_mount_hash();
+	}
+	up_write(&sb->s_umount);
 	return err;
 }
 
@@ -2523,75 +2541,7 @@ unlock:
 	return err;
 }
 
-static bool mount_too_revealing(const struct super_block *sb, int *new_mnt_flags);
-
-/**
- * vfs_create_mount - Create a mount for a configured superblock
- * @fc: The configuration context with the superblock attached
- *
- * Create a mount to an already configured superblock.  If necessary, the
- * caller should invoke vfs_get_tree() before calling this.
- *
- * Note: This does not attach the mount to anything.
- */
-struct vfsmount *vfs_create_mount(struct fs_context *fc)
-{
-	struct mount *mnt;
-
-	if (!fc->root)
-		return ERR_PTR(-EINVAL);
-
-	mnt = alloc_vfsmnt(fc->source ?: "none");
-	if (!mnt)
-		return ERR_PTR(-ENOMEM);
-
-	if (fc->sb_flags & SB_KERNMOUNT)
-		mnt->mnt.mnt_flags = MNT_INTERNAL;
-
-	atomic_inc(&fc->root->d_sb->s_active);
-	mnt->mnt.mnt_sb		= fc->root->d_sb;
-	mnt->mnt.mnt_root	= dget(fc->root);
-	mnt->mnt.mnt_mountpoint	= mnt->mnt.mnt_root;
-	mnt->mnt.mnt_parent	= mnt;
-
-	lock_mount_hash();
-	list_add_tail(&mnt->mnt_instance, &mnt->mnt.mnt_sb->s_mounts);
-	unlock_mount_hash();
-	return &mnt->mnt;
-}
-EXPORT_SYMBOL(vfs_create_mount);
-
-/*
- * Create a new mount using a superblock configuration and request it
- * be added to the namespace tree.
- */
-static int do_new_mount_fc(struct fs_context *fc, struct path *mountpoint,
-			   unsigned int mnt_flags)
-{
-	struct vfsmount *mnt;
-	struct super_block *sb = fc->root->d_sb;
-	int error;
-
-	error = security_sb_kern_mount(sb);
-	if (!error && mount_too_revealing(sb, &mnt_flags))
-		error = -EPERM;
-
-	if (unlikely(error)) {
-		fc_drop_locked(fc);
-		return error;
-	}
-
-	up_write(&sb->s_umount);
-
-	mnt = vfs_create_mount(fc);
-	if (IS_ERR(mnt))
-		return PTR_ERR(mnt);
-
-	error = do_add_mount(real_mount(mnt), mountpoint, mnt_flags);
-	if (error < 0)
-		mntput(mnt);
-	return error;
-}
+static bool mount_too_revealing(struct vfsmount *mnt, int *new_mnt_flags);
 
 /*
  * create a new mount for userspace and request it to be added into the
@@ -2601,9 +2551,8 @@ static int do_new_mount(struct path *path, const char *fstype, int sb_flags,
 			int mnt_flags, const char *name, void *data)
 {
 	struct file_system_type *type;
-	struct fs_context *fc;
-	const char *subtype = NULL;
-	int err = 0;
+	struct vfsmount *mnt;
+	int err;
 
 	if (!fstype)
 		return -EINVAL;
@@ -2612,40 +2561,26 @@ static int do_new_mount(struct path *path, const char *fstype, int sb_flags,
 	if (!type)
 		return -ENODEV;
 
-	if (type->fs_flags & FS_HAS_SUBTYPE) {
-		subtype = strchr(fstype, '.');
-		if (subtype) {
-			subtype++;
-			if (!*subtype) {
-				put_filesystem(type);
-				return -EINVAL;
-			}
-		}
+	mnt = vfs_kern_mount(type, sb_flags, name, data);
+	if (!IS_ERR(mnt) && (type->fs_flags & FS_HAS_SUBTYPE)) {
+		down_write(&mnt->mnt_sb->s_umount);
+		if (!mnt->mnt_sb->s_subtype)
+			mnt = fs_set_subtype(mnt, fstype);
+		up_write(&mnt->mnt_sb->s_umount);
 	}
 
-	fc = fs_context_for_mount(type, sb_flags);
 	put_filesystem(type);
-	if (IS_ERR(fc))
-		return PTR_ERR(fc);
+	if (IS_ERR(mnt))
+		return PTR_ERR(mnt);
 
-	if (subtype) {
-		fc->subtype = kstrdup(subtype, GFP_KERNEL);
-		if (!fc->subtype)
-			err = -ENOMEM;
+	if (mount_too_revealing(mnt, &mnt_flags)) {
+		mntput(mnt);
+		return -EPERM;
 	}
-	if (!err && name) {
-		fc->source = kstrdup(name, GFP_KERNEL);
-		if (!fc->source)
-			err = -ENOMEM;
-	}
-	if (!err)
-		err = parse_monolithic_mount_data(fc, data);
-	if (!err)
-		err = vfs_get_tree(fc);
-	if (!err)
-		err = do_new_mount_fc(fc, path, mnt_flags);
 
-	put_fs_context(fc);
+	err = do_add_mount(real_mount(mnt), path, mnt_flags);
+	if (err)
+		mntput(mnt);
 	return err;
 }
 
@@ -3467,8 +3402,7 @@ bool current_chrooted(void)
 	return chrooted;
 }
 
-static bool mnt_already_visible(struct mnt_namespace *ns,
-				const struct super_block *sb,
+static bool mnt_already_visible(struct mnt_namespace *ns, struct vfsmount *new,
 				int *new_mnt_flags)
 {
 	int new_flags = *new_mnt_flags;
@@ -3480,7 +3414,7 @@ static bool mnt_already_visible(struct mnt_namespace *ns,
 		struct mount *child;
 		int mnt_flags;
 
-		if (mnt->mnt.mnt_sb->s_type != sb->s_type)
+		if (mnt->mnt.mnt_sb->s_type != new->mnt_sb->s_type)
 			continue;
 
 		/* This mount is not fully visible if it's root directory
@@ -3531,7 +3465,7 @@ found:
 	return visible;
 }
 
-static bool mount_too_revealing(const struct super_block *sb, int *new_mnt_flags)
+static bool mount_too_revealing(struct vfsmount *mnt, int *new_mnt_flags)
 {
 	const unsigned long required_iflags = SB_I_NOEXEC | SB_I_NODEV;
 	struct mnt_namespace *ns = current->nsproxy->mnt_ns;
@@ -3541,7 +3475,7 @@ static bool mount_too_revealing(const struct super_block *sb, int *new_mnt_flags
 		return false;
 
 	/* Can this filesystem be too revealing? */
-	s_iflags = sb->s_iflags;
+	s_iflags = mnt->mnt_sb->s_iflags;
 	if (!(s_iflags & SB_I_USERNS_VISIBLE))
 		return false;
 
@@ -3551,7 +3485,7 @@ static bool mount_too_revealing(const struct super_block *sb, int *new_mnt_flags
 		return true;
 	}
 
-	return !mnt_already_visible(ns, sb, new_mnt_flags);
+	return !mnt_already_visible(ns, mnt, new_mnt_flags);
 }
 
 bool mnt_may_suid(struct vfsmount *mnt)
