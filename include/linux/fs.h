@@ -82,6 +82,12 @@ extern int sysctl_protected_regular;
 
 typedef __kernel_rwf_t rwf_t;
 
+/* Fuse BPF backport helper (upstream v5.12+); missing on this 4.19 kernel */
+static inline bool inode_wrong_type(const struct inode *inode, umode_t mode)
+{
+	return (inode->i_mode ^ mode) & S_IFMT;
+}
+
 struct buffer_head;
 typedef int (get_block_t)(struct inode *inode, sector_t iblock,
 			struct buffer_head *bh_result, int create);
