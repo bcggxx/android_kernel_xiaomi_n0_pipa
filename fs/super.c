@@ -1023,6 +1023,98 @@ int do_remount_sb(struct super_block *sb, int flags, void *data, int force)
 	return do_remount_sb2(NULL, sb, flags, data, force);
 }
 
+/**
+ * reconfigure_super - asks filesystem to change superblock parameters
+ * @fc: The superblock and configuration
+ *
+ * Alters the configuration parameters of a live superblock.
+ */
+int reconfigure_super(struct fs_context *fc)
+{
+	struct super_block *sb = fc->root->d_sb;
+	int retval;
+	bool remount_ro = false;
+	bool force = fc->sb_flags & SB_FORCE;
+
+	if (fc->sb_flags_mask & ~MS_RMT_MASK)
+		return -EINVAL;
+	if (sb->s_writers.frozen != SB_UNFROZEN)
+		return -EBUSY;
+
+	retval = security_sb_remount(sb, fc->security);
+	if (retval)
+		return retval;
+
+	if (fc->sb_flags_mask & SB_RDONLY) {
+#ifdef CONFIG_BLOCK
+		if (!(fc->sb_flags & SB_RDONLY) && bdev_read_only(sb->s_bdev))
+			return -EACCES;
+#endif
+
+		remount_ro = (fc->sb_flags & SB_RDONLY) && !sb_rdonly(sb);
+	}
+
+	if (remount_ro) {
+		if (!hlist_empty(&sb->s_pins)) {
+			up_write(&sb->s_umount);
+			group_pin_kill(&sb->s_pins);
+			down_write(&sb->s_umount);
+			if (!sb->s_root)
+				return 0;
+			if (sb->s_writers.frozen != SB_UNFROZEN)
+				return -EBUSY;
+			remount_ro = !sb_rdonly(sb);
+		}
+	}
+	shrink_dcache_sb(sb);
+
+	/* If we are reconfiguring to RDONLY and current sb is read/write,
+	 * make sure there are no files open for writing.
+	 */
+	if (remount_ro) {
+		if (force) {
+			sb->s_readonly_remount = 1;
+			smp_wmb();
+		} else {
+			retval = sb_prepare_remount_readonly(sb);
+			if (retval)
+				return retval;
+		}
+	}
+
+	if (fc->ops->reconfigure) {
+		retval = fc->ops->reconfigure(fc);
+		if (retval) {
+			if (!force)
+				goto cancel_readonly;
+			/* If forced remount, go ahead despite any errors */
+			WARN(1, "forced remount of a %s fs returned %i\n",
+			     sb->s_type->name, retval);
+		}
+	}
+	WRITE_ONCE(sb->s_flags, ((sb->s_flags & ~fc->sb_flags_mask) |
+				 (fc->sb_flags & fc->sb_flags_mask)));
+	/* Needs to be ordered wrt mnt_is_readonly() */
+	smp_wmb();
+	sb->s_readonly_remount = 0;
+
+	/*
+	 * Some filesystems modify their metadata via some other path than the
+	 * bdev buffer cache (eg. use a private mapping, or directories in
+	 * pagecache, etc). Also file data modifications go via their own
+	 * mappings. So If we try to mount readonly then copy the filesystem
+	 * from bdev, we could get stale data, so invalidate it to give a best
+	 * effort at coherency.
+	 */
+	if (remount_ro && sb->s_bdev)
+		invalidate_bdev(sb->s_bdev);
+	return 0;
+
+cancel_readonly:
+	sb->s_readonly_remount = 0;
+	return retval;
+}
+
 static void do_emergency_remount_callback(struct super_block *sb)
 {
 	down_write(&sb->s_umount);

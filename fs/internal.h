@@ -108,6 +108,7 @@ extern int do_remount_sb(struct super_block *, int, void *, int);
 extern int do_remount_sb2(struct vfsmount *, struct super_block *, int,
 								void *, int);
 extern bool trylock_super(struct super_block *sb);
+extern int reconfigure_super(struct fs_context *fc);
 extern struct super_block *user_get_super(dev_t);
 
 /*
