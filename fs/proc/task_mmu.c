@@ -19,6 +19,8 @@
 #include <linux/shmem_fs.h>
 #include <linux/uaccess.h>
 #include <linux/pkeys.h>
+#include <linux/ctype.h>
+#include <linux/mm_inline.h>
 
 #include <asm/elf.h>
 #include <asm/tlb.h>
@@ -1841,6 +1843,10 @@ cont:
 	return (rp->nr_to_reclaim == 0) ? -EPIPE : 0;
 }
 
+static const struct mm_walk_ops reclaim_walk_ops = {
+	.pmd_entry	= reclaim_pte_range,
+};
+
 enum reclaim_type {
 	RECLAIM_FILE,
 	RECLAIM_ANON,
@@ -1860,11 +1866,11 @@ struct reclaim_param reclaim_task_nomap(struct task_struct *task,
 	mm = get_task_mm(task);
 	if (!mm)
 		goto out;
-	mmap_read_lock(mm);
+	down_read(&mm->mmap_sem);
 
 	proc_reclaim_notify((unsigned long)task_pid(task), (void *)&rp);
 
-	mmap_read_unlock(mm);
+	up_read(&mm->mmap_sem);
 	mmput(mm);
 out:
 	put_task_struct(task);
@@ -1876,7 +1882,6 @@ struct reclaim_param reclaim_task_anon(struct task_struct *task,
 {
 	struct mm_struct *mm;
 	struct vm_area_struct *vma;
-	struct mm_walk reclaim_walk = {};
 	struct reclaim_param rp = {
 		.nr_to_reclaim = nr_to_reclaim,
 	};
@@ -1886,12 +1891,7 @@ struct reclaim_param reclaim_task_anon(struct task_struct *task,
 	if (!mm)
 		goto out;
 
-	reclaim_walk.mm = mm;
-	reclaim_walk.pmd_entry = reclaim_pte_range;
-
-	reclaim_walk.private = &rp;
-
-	mmap_read_lock(mm);
+	down_read(&mm->mmap_sem);
 	for (vma = mm->mmap; vma; vma = vma->vm_next) {
 		if (is_vm_hugetlb_page(vma))
 			continue;
@@ -1903,12 +1903,12 @@ struct reclaim_param reclaim_task_anon(struct task_struct *task,
 			break;
 
 		rp.vma = vma;
-		walk_page_range(vma->vm_start, vma->vm_end,
-			&reclaim_walk);
+		walk_page_range(mm, vma->vm_start, vma->vm_end,
+				&reclaim_walk_ops, &rp);
 	}
 
 	flush_tlb_mm(mm);
-	mmap_read_unlock(mm);
+	up_read(&mm->mmap_sem);
 	mmput(mm);
 out:
 	put_task_struct(task);
@@ -1924,7 +1924,6 @@ static ssize_t reclaim_write(struct file *file, const char __user *buf,
 	struct vm_area_struct *vma;
 	enum reclaim_type type;
 	char *type_buf;
-	struct mm_walk reclaim_walk = {};
 	short before_reclaim_adj;
 	unsigned long start = 0;
 	unsigned long end = 0;
@@ -1998,18 +1997,14 @@ static ssize_t reclaim_write(struct file *file, const char __user *buf,
 	if (!mm)
 		goto out;
 
-	reclaim_walk.mm = mm;
-	reclaim_walk.pmd_entry = reclaim_pte_range;
-
 	rp.nr_to_reclaim = INT_MAX;
 	rp.nr_reclaimed = 0;
-	reclaim_walk.private = &rp;
 
 	if (NULL == task->signal)
 		goto out;
 
 	before_reclaim_adj = task->signal->oom_score_adj;
-	mmap_read_lock(mm);
+	down_read(&mm->mmap_sem);
 	if (type == RECLAIM_RANGE) {
 		vma = find_vma(mm, start);
 		while (vma) {
@@ -2019,9 +2014,9 @@ static ssize_t reclaim_write(struct file *file, const char __user *buf,
 				continue;
 
 			rp.vma = vma;
-			ret = walk_page_range(max(vma->vm_start, start),
+			ret = walk_page_range(mm, max(vma->vm_start, start),
 					min(vma->vm_end, end),
-					&reclaim_walk);
+					&reclaim_walk_ops, &rp);
 			if (ret)
 				break;
 			vma = vma->vm_next;
@@ -2041,15 +2036,15 @@ static ssize_t reclaim_write(struct file *file, const char __user *buf,
 				continue;
 
 			rp.vma = vma;
-			ret = walk_page_range(vma->vm_start, vma->vm_end,
-				&reclaim_walk);
+			ret = walk_page_range(mm, vma->vm_start, vma->vm_end,
+				&reclaim_walk_ops, &rp);
 			if (ret)
 				break;
 		}
 	}
 
 	flush_tlb_mm(mm);
-	mmap_read_unlock(mm);
+	up_read(&mm->mmap_sem);
 	mmput(mm);
 out:
 	put_task_struct(task);
