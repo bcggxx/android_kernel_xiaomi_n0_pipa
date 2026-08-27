@@ -130,8 +130,6 @@ source "drivers/staging/cam-reclaim/Kconfig"
 
 source "drivers/staging/mi-reclaim/Kconfig"
 
-source "drivers/staging/cam-reclaim/Kconfig"
-
 source "drivers/staging/binder_prio/Kconfig"
 
 endif # STAGING
