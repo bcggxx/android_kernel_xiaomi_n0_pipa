@@ -1395,6 +1395,7 @@ extern int send_sigurg(struct fown_struct *fown);
 #define SB_KERNMOUNT	(1<<22) /* this is a kern_mount call */
 #define SB_I_VERSION	(1<<23) /* Update inode I_version field */
 #define SB_LAZYTIME	(1<<25) /* Update the on-disk [acm]times lazily */
+#define SB_FORCE	(1<<27)	/* Force type change despite errors */
 
 /* These sb flags are internal to the kernel */
 #define SB_SUBMOUNT     (1<<26)
