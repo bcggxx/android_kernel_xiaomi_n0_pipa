@@ -1632,6 +1632,56 @@ struct dentry *mount_single(struct file_system_type *fs_type,
 }
 EXPORT_SYMBOL(mount_single);
 
+struct dentry *
+mount_fs(struct file_system_type *type, int flags, const char *name, struct vfsmount *mnt, void *data)
+{
+	struct dentry *root;
+	struct super_block *sb;
+	int error = -ENOMEM;
+
+	if (type->mount2)
+		root = type->mount2(mnt, type, flags, name, data);
+	else
+		root = type->mount(type, flags, name, data);
+	if (IS_ERR(root)) {
+		error = PTR_ERR(root);
+		goto out;
+	}
+	sb = root->d_sb;
+	BUG_ON(!sb);
+	WARN_ON(!sb->s_bdi);
+
+	/*
+	 * Write barrier is for super_cache_count(). We place it before setting
+	 * SB_BORN as the data dependency between the two functions is the
+	 * superblock structure contents that we just set up, not the SB_BORN
+	 * flag.
+	 */
+	smp_wmb();
+	sb->s_flags |= SB_BORN;
+
+	error = security_sb_kern_mount(sb);
+	if (error)
+		goto out_sb;
+
+	/*
+	 * filesystems should never set s_maxbytes larger than MAX_LFS_FILESIZE
+	 * but s_maxbytes was an unsigned long long for many releases. Throw
+	 * this warning for a little while to try and catch filesystems that
+	 * violate this rule.
+	 */
+	WARN((sb->s_maxbytes < 0), "%s set sb->s_maxbytes to "
+		"negative value (%lld)\n", type->name, sb->s_maxbytes);
+
+	up_write(&sb->s_umount);
+	return root;
+out_sb:
+	dput(root);
+	deactivate_locked_super(sb);
+out:
+	return ERR_PTR(error);
+}
+
 /**
  * vfs_get_tree - Get the mountable root
  * @fc: The superblock configuration context.

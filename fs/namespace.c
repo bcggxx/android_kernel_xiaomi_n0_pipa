@@ -971,8 +971,8 @@ struct vfsmount *vfs_create_mount(struct fs_context *fc)
 	atomic_inc(&fc->root->d_sb->s_active);
 	mnt->mnt.mnt_sb		= fc->root->d_sb;
 	mnt->mnt.mnt_root	= dget(fc->root);
-	mnt->mnt.mnt_mountpoint	= mnt->mnt.mnt_root;
-	mnt->mnt.mnt_parent	= mnt;
+	mnt->mnt_mountpoint	= mnt->mnt.mnt_root;
+	mnt->mnt_parent	= mnt;
 
 	lock_mount_hash();
 	list_add_tail(&mnt->mnt_instance, &mnt->mnt.mnt_sb->s_mounts);
