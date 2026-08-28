@@ -136,7 +136,12 @@ int vfs_parse_fs_param(struct fs_context *fc, struct fs_parameter *param)
 	if (ret != -ENOPARAM)
 		return ret;
 
-	ret = security_fs_context_parse_param(fc, param);
+	/*
+	 * The 4.19 LSM has no per-param fs_context hook; the legacy mount
+	 * paths handle LSM options via security_sb_eat_lsm_opts(), so treat
+	 * every param as not LSM-owned.
+	 */
+	ret = -ENOPARAM;
 	if (ret != -ENOPARAM)
 		/* Param belongs to the LSM or is disallowed by the LSM; so
 		 * don't pass to the FS.
@@ -207,14 +212,25 @@ EXPORT_SYMBOL(vfs_parse_fs_string);
 int generic_parse_monolithic(struct fs_context *fc, void *data)
 {
 	char *options = data, *key;
+	struct security_mnt_opts *mnt_opts;
 	int ret = 0;
 
 	if (!options)
 		return 0;
 
-	ret = security_sb_eat_lsm_opts(options, &fc->security);
-	if (ret)
+	/* 4.19 LSM API: opts object is filled in place, stored in fc->security. */
+	mnt_opts = kzalloc(sizeof(struct security_mnt_opts), GFP_KERNEL);
+	if (!mnt_opts)
+		return -ENOMEM;
+	security_init_mnt_opts(mnt_opts);
+
+	ret = security_sb_eat_lsm_opts(options, mnt_opts);
+	if (ret) {
+		security_free_mnt_opts(mnt_opts);
+		kfree(mnt_opts);
 		return ret;
+	}
+	fc->security = mnt_opts;
 
 	while ((key = strsep(&options, ",")) != NULL) {
 		if (*key) {
@@ -353,7 +369,11 @@ void put_fs_context(struct fs_context *fc)
 	if (fc->need_free && fc->ops && fc->ops->free)
 		fc->ops->free(fc);
 
-	security_free_mnt_opts(&fc->security);
+	if (fc->security) {
+		security_free_mnt_opts(fc->security);
+		kfree(fc->security);
+		fc->security = NULL;
+	}
 	put_net(fc->net_ns);
 	put_user_ns(fc->user_ns);
 	put_cred(fc->cred);
@@ -446,6 +466,8 @@ static int legacy_parse_param(struct fs_context *fc, struct fs_parameter *param)
 static int legacy_parse_monolithic(struct fs_context *fc, void *data)
 {
 	struct legacy_fs_context *ctx = fc->fs_private;
+	struct security_mnt_opts *mnt_opts;
+	int ret;
 
 	if (ctx->param_type != LEGACY_FS_UNSET_PARAMS) {
 		pr_warn("VFS: Can't mix monolithic and individual options\n");
@@ -459,7 +481,21 @@ static int legacy_parse_monolithic(struct fs_context *fc, void *data)
 
 	if (fc->fs_type->fs_flags & FS_BINARY_MOUNTDATA)
 		return 0;
-	return security_sb_eat_lsm_opts(ctx->legacy_data, &fc->security);
+
+	/* 4.19 LSM API: opts object is filled in place, stored in fc->security. */
+	mnt_opts = kzalloc(sizeof(struct security_mnt_opts), GFP_KERNEL);
+	if (!mnt_opts)
+		return -ENOMEM;
+	security_init_mnt_opts(mnt_opts);
+
+	ret = security_sb_eat_lsm_opts(ctx->legacy_data, mnt_opts);
+	if (ret) {
+		security_free_mnt_opts(mnt_opts);
+		kfree(mnt_opts);
+		return ret;
+	}
+	fc->security = mnt_opts;
+	return 0;
 }
 
 /*
