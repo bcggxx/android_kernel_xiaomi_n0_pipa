@@ -1632,12 +1632,65 @@ struct dentry *mount_single(struct file_system_type *fs_type,
 }
 EXPORT_SYMBOL(mount_single);
 
+/*
+ * Mount a filesystem that only provides the fs_context API (no
+ * ->mount/->mount2 callback) through a filesystem context, the way
+ * vfs_kern_mount() does it on kernels that have the new mount API.
+ *
+ * On success the reference on fc->root and the reference on the
+ * superblock are transferred to the caller, and s_umount is left
+ * unlocked, matching what the legacy ->mount() path below does.
+ */
+static struct dentry *mount_fs_fc(struct file_system_type *type, int flags,
+				  const char *name, void *data)
+{
+	struct fs_context *fc;
+	struct dentry *root;
+	int error;
+
+	fc = fs_context_for_mount(type, flags);
+	if (IS_ERR(fc))
+		return ERR_CAST(fc);
+
+	if (name) {
+		error = vfs_parse_fs_string(fc, "source", name, strlen(name));
+		if (error < 0)
+			goto out_fc;
+	}
+
+	error = parse_monolithic_mount_data(fc, data);
+	if (error < 0)
+		goto out_fc;
+
+	error = vfs_get_tree(fc);
+	if (error < 0)
+		goto out_fc;
+
+	if (!(flags & (SB_KERNMOUNT | SB_SUBMOUNT))) {
+		error = security_sb_kern_mount(fc->root->d_sb);
+		if (error < 0) {
+			fc_drop_locked(fc);
+			goto out_fc;
+		}
+	}
+
+	root = fc->root;
+	fc->root = NULL;
+	up_write(&root->d_sb->s_umount);
+out_fc:
+	put_fs_context(fc);
+	return error < 0 ? ERR_PTR(error) : root;
+}
+
 struct dentry *
 mount_fs(struct file_system_type *type, int flags, const char *name, struct vfsmount *mnt, void *data)
 {
 	struct dentry *root;
 	struct super_block *sb;
 	int error = -ENOMEM;
+
+	if (!type->mount2 && !type->mount)
+		return mount_fs_fc(type, flags, name, data);
 
 	if (type->mount2)
 		root = type->mount2(mnt, type, flags, name, data);
