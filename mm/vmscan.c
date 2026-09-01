@@ -4570,7 +4570,7 @@ unsigned long mi_reclaim_global(unsigned long nr_to_reclaim, int reclaim_type)
 {
 	struct reclaim_state reclaim_state;
 	struct scan_control sc = {
-		.nr_to_reclaim = min(nr_to_reclaim, SWAP_CLUSTER_MAX),
+		.nr_to_reclaim = max(nr_to_reclaim, SWAP_CLUSTER_MAX),
 		.gfp_mask = GFP_HIGHUSER_MOVABLE,
 		.reclaim_idx = MAX_NR_ZONES - 1,
 		.order = 0,
