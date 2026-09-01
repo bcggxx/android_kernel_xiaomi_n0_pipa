@@ -1749,8 +1749,25 @@ int reclaim_address_space(struct address_space *mapping,
 		if (xa_is_value(page))
 			continue;
 
-		if (isolate_lru_page(page))
+		/*
+		 * Pin the page before touching it: a concurrent truncate
+		 * could otherwise free it between the deref and the
+		 * isolate_lru_page() call.
+		 */
+		if (!page_cache_get_speculative(page))
 			continue;
+
+		if (isolate_lru_page(page)) {
+			put_page(page);
+			continue;
+		}
+
+		/*
+		 * isolate_lru_page() took its own reference on success;
+		 * drop the speculative one so that the reference count
+		 * matches the other reclaim paths.
+		 */
+		put_page(page);
 
 		rp->nr_scanned++;
 
@@ -1785,7 +1802,7 @@ int reclaim_pte_range(pmd_t *pmd, unsigned long addr,
 	int isolated;
 	int reclaimed;
 
-	split_huge_pmd(vma, addr, pmd);
+	split_huge_pmd(vma, pmd, addr);
 	if (pmd_trans_unstable(pmd) || !rp->nr_to_reclaim)
 		return 0;
 cont:
@@ -1997,11 +2014,13 @@ static ssize_t reclaim_write(struct file *file, const char __user *buf,
 	if (!mm)
 		goto out;
 
+	memset(&rp, 0, sizeof(rp));
 	rp.nr_to_reclaim = INT_MAX;
-	rp.nr_reclaimed = 0;
 
-	if (NULL == task->signal)
+	if (NULL == task->signal) {
+		mmput(mm);
 		goto out;
+	}
 
 	before_reclaim_adj = task->signal->oom_score_adj;
 	down_read(&mm->mmap_sem);
@@ -2010,8 +2029,10 @@ static ssize_t reclaim_write(struct file *file, const char __user *buf,
 		while (vma) {
 			if (vma->vm_start > end)
 				break;
-			if (is_vm_hugetlb_page(vma))
+			if (is_vm_hugetlb_page(vma)) {
+				vma = vma->vm_next;
 				continue;
+			}
 
 			rp.vma = vma;
 			ret = walk_page_range(mm, max(vma->vm_start, start),
