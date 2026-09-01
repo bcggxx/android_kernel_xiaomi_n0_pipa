@@ -567,11 +567,15 @@ static int __init mi_reclaim_init(void)
 		goto failed_to_create_sysfs;
 
 	if (mi_reclaim_thread_start() < 0)
-		return RET_FAIL;
+		goto failed_to_start_thread;
 
 	pg_mi_reclaim->switch_on = true;
 	pr_info("mi_reclaim init ok\n");
 	return RET_OK;
+
+failed_to_start_thread:
+	mi_reclaim_sysfs_destory(pg_mi_reclaim->kobj);
+	pg_mi_reclaim->kobj = NULL;
 
 failed_to_create_sysfs:
 	return RET_FAIL;
