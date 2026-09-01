@@ -159,12 +159,8 @@ static void pkg_init_millet(struct millet_sock *sk)
 
 static uid_t __sock_i_uid(struct sock *sk)
 {
-	uid_t uid;
-
-	if (sk && sk->sk_socket) {
-		uid = SOCK_INODE(sk->sk_socket)->i_uid.val;
-		return uid;
-	}
+	if (sk)
+		return sock_i_uid(sk).val;
 
 	return 0;
 }
@@ -173,7 +169,7 @@ static unsigned int pkg_ip4_in(void *priv, struct sk_buff *skb,
 		const struct nf_hook_state *state)
 {
 	struct sock *sk;
-	struct millet_data data;
+	struct millet_data data = {};
 	uid_t uid;
 	int found;
 	int protocol;
@@ -205,7 +201,7 @@ static unsigned int pkg_ip6_in(void *priv, struct sk_buff *skb,
 		const struct nf_hook_state *state)
 {
 	struct sock *sk;
-	struct millet_data data;
+	struct millet_data data = {};
 	unsigned int thoff = 0;
 	unsigned short frag_off = 0;
 	int protohdr;
