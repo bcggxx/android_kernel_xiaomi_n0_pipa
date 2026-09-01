@@ -712,6 +712,8 @@ static int fuse_parse_param(struct fs_context *fc, struct fs_parameter *param)
 		break;
 
 	case OPT_ROOT_BPF:
+		if (ctx->root_bpf)
+			return invalf(fc, "fuse: Multiple root_bpf specified");
 		ctx->root_bpf = bpf_prog_get_type_dev(result.uint_32,
 						BPF_PROG_TYPE_FUSE, false);
 		if (IS_ERR(ctx->root_bpf)) {
@@ -721,6 +723,8 @@ static int fuse_parse_param(struct fs_context *fc, struct fs_parameter *param)
 		break;
 
 	case OPT_ROOT_DIR:
+		if (ctx->root_dir)
+			return invalf(fc, "fuse: Multiple root_dir specified");
 		ctx->root_dir = fget(result.uint_32);
 		if (!ctx->root_dir)
 			return invalf(fc, "Unable to open root directory");
@@ -1451,6 +1455,8 @@ int fuse_fill_super_submount(struct super_block *sb,
 
 	fuse_fill_attr_from_inode(&root_attr, &parent_fi->inode);
 	root = fuse_iget(sb, parent_fi->nodeid, 0, &root_attr, 0, 0);
+	if (!root)
+		return -ENOMEM;
 	/*
 	 * This inode is just a duplicate, so it is not looked up and
 	 * its nlookup should not be incremented.  fuse_iget() does
