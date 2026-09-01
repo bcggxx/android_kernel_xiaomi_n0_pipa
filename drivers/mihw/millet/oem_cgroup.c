@@ -30,7 +30,7 @@ int millet_can_attach(struct cgroup_taskset *tset)
 		    !(cred->euid.val == 1000
 			    || capable(CAP_SYS_ADMIN))) {
 			pr_err("Permission problem\n");
-			return 1; // >0 means can't attach
+			return -EPERM;
 		}
 	}
 
