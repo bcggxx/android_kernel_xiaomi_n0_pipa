@@ -105,6 +105,7 @@ static inline void do_reclaim(int force_reclaim_type)
 {
 	int event_type;
 	int reclaim_need;
+	int no_progress = 0;
 	unsigned long real_reclaim;
 	unsigned long pages;
 
@@ -151,6 +152,16 @@ static inline void do_reclaim(int force_reclaim_type)
 
 		real_reclaim = cam_reclaim_global(per_want_reclaim_pages, force_reclaim_type);
 		trace_printk("tracing_mark_write: E\n");
+
+		/*
+		 * Bail out instead of busy spinning when reclaim
+		 * makes no progress (the loop would otherwise only
+		 * be bounded by once_reclaim_time_up).
+		 */
+		if (!real_reclaim && ++no_progress >= 2)
+			break;
+		if (real_reclaim)
+			no_progress = 0;
 
 		reclaim_need = sysmeminfo_process(force_reclaim_type, reclaim_pages, real_reclaim, pg_cam_reclaim->page_reclaim.total_reclaim_pages, pg_cam_reclaim->debug);
 		if (reclaim_need == 0)
@@ -530,12 +541,16 @@ static int __init cam_reclaim_init(void)
 		goto failed_to_create_sysfs;
 
 	if (cam_reclaim_thread_start() < 0)
-		return RET_FAIL;
+		goto failed_to_start_thread;
 
 	pg_cam_reclaim->switch_on = true;
 	pg_cam_reclaim->debug = true;
 	pr_info("cam_reclaim init ok\n");
 	return RET_OK;
+
+failed_to_start_thread:
+	cam_reclaim_sysfs_destory(pg_cam_reclaim->kobj);
+	pg_cam_reclaim->kobj = NULL;
 
 failed_to_create_sysfs:
 	return RET_FAIL;
