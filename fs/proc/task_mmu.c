@@ -1772,8 +1772,6 @@ int reclaim_address_space(struct address_space *mapping,
 		rp->nr_scanned++;
 
 		list_add(&page->lru, &page_list);
-		inc_node_page_state(page, NR_ISOLATED_ANON +
-				page_is_file_cache(page));
 
 		if (need_resched()) {
 			slot = radix_tree_iter_resume(slot, &iter);
@@ -1839,8 +1837,6 @@ cont:
 		}
 
 		list_add(&page->lru, &page_list);
-		inc_node_page_state(page, NR_ISOLATED_ANON +
-				page_is_file_cache(page));
 		isolated++;
 		rp->nr_scanned++;
 		if ((isolated >= SWAP_CLUSTER_MAX) || !rp->nr_to_reclaim)
