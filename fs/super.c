@@ -1685,6 +1685,7 @@ out_fc:
 struct dentry *
 mount_fs(struct file_system_type *type, int flags, const char *name, struct vfsmount *mnt, void *data)
 {
+	struct security_mnt_opts opts;
 	struct dentry *root;
 	struct super_block *sb;
 	int error = -ENOMEM;
@@ -1692,13 +1693,21 @@ mount_fs(struct file_system_type *type, int flags, const char *name, struct vfsm
 	if (!type->mount2 && !type->mount)
 		return mount_fs_fc(type, flags, name, data);
 
+	security_init_mnt_opts(&opts);
+
+	if (data && !(type->fs_flags & FS_BINARY_MOUNTDATA)) {
+		error = security_sb_eat_lsm_opts(data, &opts);
+		if (error)
+			return ERR_PTR(error);
+	}
+
 	if (type->mount2)
 		root = type->mount2(mnt, type, flags, name, data);
 	else
 		root = type->mount(type, flags, name, data);
 	if (IS_ERR(root)) {
 		error = PTR_ERR(root);
-		goto out;
+		goto out_free_secdata;
 	}
 	sb = root->d_sb;
 	BUG_ON(!sb);
@@ -1713,9 +1722,15 @@ mount_fs(struct file_system_type *type, int flags, const char *name, struct vfsm
 	smp_wmb();
 	sb->s_flags |= SB_BORN;
 
-	error = security_sb_kern_mount(sb);
+	error = security_sb_set_mnt_opts(sb, &opts, 0, NULL);
 	if (error)
 		goto out_sb;
+
+	if (!(flags & (SB_KERNMOUNT | SB_SUBMOUNT))) {
+		error = security_sb_kern_mount(sb);
+		if (error)
+			goto out_sb;
+	}
 
 	/*
 	 * filesystems should never set s_maxbytes larger than MAX_LFS_FILESIZE
@@ -1727,11 +1742,13 @@ mount_fs(struct file_system_type *type, int flags, const char *name, struct vfsm
 		"negative value (%lld)\n", type->name, sb->s_maxbytes);
 
 	up_write(&sb->s_umount);
+	security_free_mnt_opts(&opts);
 	return root;
 out_sb:
 	dput(root);
 	deactivate_locked_super(sb);
-out:
+out_free_secdata:
+	security_free_mnt_opts(&opts);
 	return ERR_PTR(error);
 }
 
