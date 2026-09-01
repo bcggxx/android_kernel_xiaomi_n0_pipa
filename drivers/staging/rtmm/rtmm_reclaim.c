@@ -125,38 +125,50 @@ static inline struct rtmm_reclaim *get_reclaim(void)
 static int mem_process_kill(pid_t pid)
 {
 	struct task_struct *task;
-	struct signal_struct *sig;
 	struct mm_struct *mm;
-	int oom_score_adj;
 	unsigned long rss = 0;
+	unsigned long flags;
 	int ret = 0;
 
 	rcu_read_lock();
 	task = find_task_by_vpid(pid);
-	if (!task) {
-		ret = -ESRCH;
-		goto out;
-	}
-	mm = task->mm;
-	sig = task->signal;
-	if (!mm || !sig) {
+	if (task)
+		get_task_struct(task);
+	rcu_read_unlock();
+
+	if (!task)
+		return -ESRCH;
+
+	mm = get_task_mm(task);
+	if (!mm) {
 		ret = -ESRCH;
 		goto out;
 	}
 
-	oom_score_adj = sig->oom_score_adj;
-	if (oom_score_adj < 0) {
-		pr_warn("KILL: odj %d, exit\n", oom_score_adj);
-		ret = -EPERM;
-		goto out;
+	/* Read ->signal under the siglock; the task may be exiting. */
+	if (!lock_task_sighand(task, &flags)) {
+		ret = -ESRCH;
+		goto out_mm;
 	}
+
+	if (task->signal->oom_score_adj < 0) {
+		pr_warn("KILL: odj %d, exit\n",
+				task->signal->oom_score_adj);
+		ret = -EPERM;
+		unlock_task_sighand(task, &flags);
+		goto out_mm;
+	}
+	unlock_task_sighand(task, &flags);
 
 	rss = get_mm_rss(mm);
 
 	pr_info("kill process %d(%s)\n", pid, task->comm);
 	send_sig(SIGKILL, task, 0);
+
+out_mm:
+	mmput(mm);
 out:
-	rcu_read_unlock();
+	put_task_struct(task);
 
 	return (ret < 0) ? ret : rss;
 }
@@ -310,10 +322,9 @@ static struct reclaim_cmd *__dequeue_reclaim_cmd(struct rtmm_reclaim *reclaim)
 		cmd = list_first_entry(&reclaim->cmd_todo,
 				       struct reclaim_cmd, list);
 		list_del(&cmd->list);
+		atomic_dec(&reclaim->cmd_nr);
 	}
 	spin_unlock(&reclaim->lock);
-
-	atomic_dec(&reclaim->cmd_nr);
 
 	return cmd;
 }
@@ -333,8 +344,11 @@ static int mem_reclaim_thread(void *data)
 
 		while (atomic_read(&reclaim->cmd_nr) > 0) {
 			cmd = __dequeue_reclaim_cmd(reclaim);
-			if (!cmd && !(cmd->type > RECLAIM_NONE && cmd->type < RECLAIM_TYPE_NR))
+			if (!cmd || !(cmd->type > RECLAIM_NONE && cmd->type < RECLAIM_TYPE_NR)) {
+				if (cmd)
+					__release_reclaim_cmd(cmd);
 				break;
+			}
 
 			switch (cmd->type) {
 			case RECLAIM_KILL:
