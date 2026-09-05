@@ -230,7 +230,7 @@ fi
 cd anykernel || { err "进入 anykernel 目录失败 / Failed to enter anykernel directory."; exit 1; }
 
 timestamp=$(date +%Y%m%d)
-ZIP_FILENAME="Kernel_N0_pipa_A15_AOSP_MIUI_${timestamp}.zip"
+ZIP_FILENAME="Kernel_N0_pipa_A15_below_AOSP_MIUI_${timestamp}.zip"
 
 #优化 zip 参数并排除多余文件
 #Optimize zip parameters and exclude unnecessary files
