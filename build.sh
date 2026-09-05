@@ -233,7 +233,7 @@ timestamp=$(date +%Y%m%d)
 # 可选 test 标识:CI 设置 KERNEL_ZIP_TAG=test 时,产物名带 test 标记
 # Optional test tag: zip name gets a test marker when KERNEL_ZIP_TAG=test is set by CI
 ZIP_TAG="${KERNEL_ZIP_TAG:+_${KERNEL_ZIP_TAG}}"
-ZIP_FILENAME="Kernel_N0_pipa_A15_AOSP_MIUI${ZIP_TAG}_${timestamp}.zip"
+ZIP_FILENAME="Kernel_N0_pipa_A15_below_AOSP_MIUI${ZIP_TAG}_${timestamp}.zip"
 
 #优化 zip 参数并排除多余文件
 #Optimize zip parameters and exclude unnecessary files
