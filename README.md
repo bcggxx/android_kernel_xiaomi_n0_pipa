@@ -19,6 +19,7 @@
 
 - [🏆 为什么选择我们](#为什么选择我们)
 - [📦 项目说明](#项目说明)
+- [🌿 分支说明](#分支说明)
 - [⚙️ ReKernel 使用说明](#rekernel-使用说明)
 - [🚀 快速开始](#快速开始)
   - [构建无 Root 内核](#构建无-root-内核)
@@ -49,6 +50,31 @@
 - [**ReSukiSU**](https://github.com/ReSukiSU/ReSukiSU/) — 一个更加稳定的 SukiSU 分支。SukiSU 本身是强大的内核级 Root 权限方案，在安全性上毫不让步；ReSukiSU 则在此基础上进一步提升了稳定性。
 - [**SuSFS**](https://gitlab.com/simonpunk/susfs4ksu/) — 面向 KernelSU 的 Root 隐藏内核补丁及用户空间模块，能够有效绕过应用对 Root 的检测。
 - [**ReKernel**](https://github.com/Sakion-Team/Re-Kernel/) — 致力于为墓碑用户提供更流畅、更稳定的使用体验。
+
+## 🌿 分支说明
+
+### 内核源码分支
+
+| 分支 | 状态 | 说明 |
+|---|---|---|
+| `n0-A15`（默认） | ✅ 现役 | 面向 Android 15 及以下系统 |
+| `n0-A15-test` | ✅ 现役 | A15 线测试构建，产物带 `test` 标记 |
+| `n0-A17` | ✅ 现役 | Android 16 / 17 共用主线（含 BPF JIT 现代化、clone3、CAP_CHECKPOINT_RESTORE、vendor hooks、hwconf_manager 等） |
+| `n0-A16` / `n0-A16-test` | 🧊 已退役 | 功能已被 `n0-A17` 完全覆盖，仅保留作为纯 A16 基线 |
+| `bpf-qti`、`mods`、`em-ksu` 等 | 🗃️ 历史分支 | 开发期工作分支，不再维护 |
+
+### AnyKernel3 分支对应
+
+内核构建脚本（`build.sh`）会按当前分支自动克隆对应的 AnyKernel3 配置分支（[bcggxx/AnyKernel3](https://github.com/bcggxx/AnyKernel3)）：
+
+| 内核分支 | AnyKernel3 分支 | supported.versions | 产物命名 |
+|---|---|---|---|
+| `n0-A17` | `n0-A17` | 16, 17 | `Kernel_N0_pipa_A16_17_AOSP_HyperOS_*` |
+| `n0-A16*` | `n0-A16` | 16 | 已停止构建 |
+| `n0-A15*` | `n0-A15` | 15 及以下 | `Kernel_N0_pipa_A15_below_AOSP_MIUI_*` |
+
+> [!TIP]
+> AnyKernel3 分支的 `supported.versions` 会在刷机时校验系统版本，防止刷错包。
 
 ## ⚙️ ReKernel 使用说明
 
