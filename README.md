@@ -61,7 +61,6 @@
 | `n0-A15-test` | ✅ 现役 | A15 线测试构建，产物带 `test` 标记 |
 | `n0-A17` | ✅ 现役 | Android 16 / 17 共用主线（含 BPF JIT 现代化、clone3、CAP_CHECKPOINT_RESTORE、vendor hooks、hwconf_manager 等） |
 | `n0-A16` / `n0-A16-test` | 🧊 已退役 | 功能已被 `n0-A17` 完全覆盖，仅保留作为纯 A16 基线 |
-| `bpf-qti`、`mods`、`em-ksu` 等 | 🗃️ 历史分支 | 开发期工作分支，不再维护 |
 
 ### AnyKernel3 分支对应
 
