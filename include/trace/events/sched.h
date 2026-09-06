@@ -82,7 +82,7 @@ TRACE_EVENT(sched_enq_deq_task,
 		__entry->cpu		= task_cpu(p);
 		__entry->enqueue	= enqueue;
 		__entry->nr_running	= task_rq(p)->nr_running;
-		__entry->cpu_load	= task_rq(p)->cpu_load[0];
+		__entry->cpu_load	= task_rq(p)->cfs.avg.load_avg;
 		__entry->rt_nr_running	= task_rq(p)->rt.rt_nr_running;
 		__entry->cpus_allowed	= cpus_allowed;
 		__entry->demand		= task_load(p);
@@ -725,7 +725,7 @@ TRACE_EVENT(sched_load_cfs_rq,
 		__trace_sched_path(cfs_rq, __get_dynamic_array(path),
 				   __get_dynamic_array_len(path));
 		__entry->load		= cfs_rq->avg.load_avg;
-		__entry->rbl_load 	= cfs_rq->avg.runnable_load_avg;
+		__entry->rbl_load 	= cfs_rq->avg.runnable_avg;
 		__entry->util		= cfs_rq->avg.util_avg;
 	),
 
@@ -831,7 +831,7 @@ TRACE_EVENT(sched_load_se,
 				      p ? TASK_COMM_LEN : sizeof("(null)"));
 		__entry->pid = p ? p->pid : -1;
 		__entry->load = se->avg.load_avg;
-		__entry->rbl_load = se->avg.runnable_load_avg;
+		__entry->rbl_load = se->avg.runnable_avg;
 		__entry->util = se->avg.util_avg;
 	),
 
@@ -967,7 +967,7 @@ TRACE_EVENT(sched_cpu_util,
 		__entry->idle_state         = idle_get_state_idx(cpu_rq(cpu));
 		__entry->irqload            = sched_irqload(cpu);
 		__entry->online             = cpu_online(cpu);
-		__entry->isolated           = cpu_isolated(cpu);
+		__entry->isolated           = 0;
 		__entry->reserved           = is_reserved(cpu);
 		__entry->high_irq_load      = sched_cpu_high_irqload(cpu);
 		__entry->nr_rtg_high_prio_tasks = walt_nr_rtg_high_prio(cpu);

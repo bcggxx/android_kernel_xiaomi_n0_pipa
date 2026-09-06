@@ -2160,6 +2160,23 @@ static inline struct cpuidle_state *idle_get_state(struct rq *rq)
 
 #endif
 
+#ifdef CONFIG_CPU_IDLE
+static inline int idle_get_state_idx(struct rq *rq)
+{
+	struct cpuidle_state *idle_state = idle_get_state(rq);
+
+	if (!idle_state)
+		return -1;
+
+	return idle_state - rq->idle_state;
+}
+#else
+static inline int idle_get_state_idx(struct rq *rq)
+{
+	return -1;
+}
+#endif
+
 extern void schedule_idle(void);
 
 extern void sysrq_sched_debug_show(void);
