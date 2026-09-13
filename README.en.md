@@ -19,6 +19,7 @@ A non-GKI kernel build project based on the **Xiaomi SM8250** platform, integrat
 
 - [🏆 Why Choose Us](#why-choose-us)
 - [📦 Project Description](#project-description)
+- [🌿 Branch Guide](#branch-guide)
 - [⚙️ ReKernel Usage Notes](#rekernel-usage-notes)
 - [🚀 Quick Start](#quick-start)
   - [Building a Kernel Without Root](#building-a-kernel-without-root)
@@ -50,6 +51,32 @@ A non-GKI kernel build project based on the **Xiaomi SM8250** platform, integrat
 - [**SuSFS**](https://gitlab.com/simonpunk/susfs4ksu/) — A root-hiding kernel patch and userspace module designed for KernelSU, effectively bypassing root detection by apps.
 - [**ReKernel**](https://github.com/Sakion-Team/Re-Kernel/) — Committed to providing a smoother and more stable user experience, especially for users who freeze background apps.
 
+## 🌿 Branch Guide
+
+### Kernel Source Branches
+
+| Branch | Status | Description |
+|---|---|---|
+| `n0-A15` (default) | ✅ Stable | For Android 15 and below |
+| `n0-A16` | ✅ Stable | For Android 16 |
+| `n0` | 🧪 Testing | Shared cutting-edge line for Android 16 / 17 (modernized BPF JIT, clone3, CAP_CHECKPOINT_RESTORE, vendor hooks, hwconf_manager, etc.), shipped in both AOSP and MIUI/HyperOS flavors |
+
+> [!NOTE]
+> `n0` is the testing branch — newest features, stability still under validation. `n0-A15` / `n0-A16` are stable branches recommended for daily use.
+
+### AnyKernel3 Branch Mapping
+
+The build script (`build.sh`) clones the matching AnyKernel3 branch ([bcggxx/AnyKernel3](https://github.com/bcggxx/AnyKernel3)) based on the current kernel branch:
+
+| Kernel Branch | AnyKernel3 Branch | supported.versions | Output Name |
+|---|---|---|---|
+| `n0-A15` | `n0-A15` | Unrestricted | `Kernel_N0_pipa_A15_below_AOSP_MIUI_*` |
+| `n0-A16` | `n0-A16` | 16 | `Kernel_N0_pipa_A16_AOSP_MIUI_*` |
+| `n0` | `n0` | Unrestricted | `Kernel_N0_pipa_A17_AOSP_MIUI_*` (AOSP)<br>`Kernel_N0_pipa_A17_MIUI_*` (MIUI/HyperOS) |
+
+> [!TIP]
+> If an AnyKernel3 branch sets `supported.versions`, the Android version is verified during flashing to prevent flashing the wrong package; when unset (unrestricted), no check is performed.
+
 ## ⚙️ ReKernel Usage Notes
 
 > [!IMPORTANT]
@@ -66,6 +93,13 @@ Once configured, ReKernel delivers a smoother and more stable experience, especi
 ### Building a Kernel Without Root
 
 To compile a kernel without Root, simply fork this repository and run it via Actions.
+
+> [!NOTE]
+> **Build Kernel For Pipa** workflow inputs:
+> - `build_n0_a15` / `build_n0_a16` / `build_n0`: select the branch(es) to build; `n0` builds both the AOSP and MIUI/HyperOS flavors
+> - `enable_droidspaces`: integrate Droidspaces (container support)
+> - `enable_rekernel`: integrate ReKernel (tombstone support)
+> - `publish_release`: publish a Release after a successful build (requires at least one branch selected)
 
 ### Building a Kernel With Root
 
