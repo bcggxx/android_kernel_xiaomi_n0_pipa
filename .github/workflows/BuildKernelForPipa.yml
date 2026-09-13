@@ -13,6 +13,11 @@ on:
         required: true
         type: boolean
         default: true
+      build_n0:
+        description: '编译 n0 分支（AOSP + MIUI 两个版本）/ Build n0 branch (both AOSP and MIUI)'
+        required: true
+        type: boolean
+        default: false
       enable_droidspaces:
         description: '集成 Droidspaces / Integrate Droidspaces'
         required: false
@@ -24,7 +29,7 @@ on:
         type: boolean
         default: false
       publish_release:
-        description: '发布 Release / Publish Release (需同时编译两个分支 / Requires both branches to be built)'
+        description: '发布 Release / Publish Release (需至少选择一个分支 / Requires at least one branch)'
         required: false
         type: boolean
         default: false
@@ -36,23 +41,26 @@ jobs:
   prepare:
     runs-on: ubuntu-latest
     outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
       branches: ${{ steps.set-matrix.outputs.branches }}
       should_release: ${{ steps.set-matrix.outputs.should_release }}
     steps:
       - id: set-matrix
         run: |
-          BRANCHES="[]"
+          MATRIX="[]"
           if [ "${{ github.event.inputs.build_n0_a15 }}" == "true" ]; then
-            BRANCHES=$(echo "$BRANCHES" | jq -c '. + ["n0-A15"]')
+            MATRIX=$(echo "$MATRIX" | jq -c '. + [{"branch": "n0-A15", "target": "aosp"}]')
           fi
           if [ "${{ github.event.inputs.build_n0_a16 }}" == "true" ]; then
-            BRANCHES=$(echo "$BRANCHES" | jq -c '. + ["n0-A16"]')
+            MATRIX=$(echo "$MATRIX" | jq -c '. + [{"branch": "n0-A16", "target": "aosp"}]')
           fi
-          echo "branches=$BRANCHES" >> $GITHUB_OUTPUT
+          if [ "${{ github.event.inputs.build_n0 }}" == "true" ]; then
+            MATRIX=$(echo "$MATRIX" | jq -c '. + [{"branch": "n0", "target": "aosp"}, {"branch": "n0", "target": "miui"}]')
+          fi
+          echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
+          echo "branches=$(echo "$MATRIX" | jq -r '[.[].branch] | unique | join(", ")')" >> $GITHUB_OUTPUT
 
-          if [ "${{ github.event.inputs.publish_release }}" == "true" ] && \
-             [ "${{ github.event.inputs.build_n0_a15 }}" == "true" ] && \
-             [ "${{ github.event.inputs.build_n0_a16 }}" == "true" ]; then
+          if [ "${{ github.event.inputs.publish_release }}" == "true" ] && [ "$MATRIX" != "[]" ]; then
             echo "should_release=true" >> $GITHUB_OUTPUT
           else
             echo "should_release=false" >> $GITHUB_OUTPUT
@@ -60,24 +68,18 @@ jobs:
 
       - name: Validate inputs
         run: |
-          if [ "${{ steps.set-matrix.outputs.branches }}" == "[]" ]; then
+          if [ "${{ steps.set-matrix.outputs.matrix }}" == "[]" ]; then
             echo "::error::至少选择一个分支进行编译 / At least one branch must be selected"
             exit 1
-          fi
-          if [ "${{ github.event.inputs.publish_release }}" == "true" ]; then
-            if [ "${{ github.event.inputs.build_n0_a15 }}" != "true" ] || \
-               [ "${{ github.event.inputs.build_n0_a16 }}" != "true" ]; then
-              echo "::error::发布 Release 需要同时编译两个分支 / Publishing release requires both branches to be built"
-              exit 1
-            fi
           fi
 
   build:
     needs: prepare
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        branch: ${{ fromJson(needs.prepare.outputs.branches) }}
+        include: ${{ fromJson(needs.prepare.outputs.matrix) }}
     steps:
       - name: Checkout workflow source
         uses: actions/checkout@v7
@@ -140,7 +142,11 @@ jobs:
           echo "DROIDSPACES_ENABLE=${{ github.event.inputs.enable_droidspaces || 'false' }}" >> "$GITHUB_ENV"
           echo "REKERNEL_ENABLE=${{ github.event.inputs.enable_rekernel || 'false' }}" >> "$GITHUB_ENV"
           echo "KERNEL_ARCH=arm64" >> "$GITHUB_ENV"
-          echo "DEFCONFIG_NAME=pipa_defconfig" >> "$GITHUB_ENV"
+          if [ "${{ matrix.branch }}" == "n0" ] && [ "${{ matrix.target }}" == "miui" ]; then
+            echo "DEFCONFIG_NAME=pipa_miui_defconfig" >> "$GITHUB_ENV"
+          else
+            echo "DEFCONFIG_NAME=pipa_defconfig" >> "$GITHUB_ENV"
+          fi
           echo "SUSFS_ENABLE=false" >> "$GITHUB_ENV"
 
       - name: Apply Droidspaces patch
@@ -153,12 +159,14 @@ jobs:
 
       - name: Build Kernel
         working-directory: build-src
-        run: ./build.sh
+        env:
+          BUILD_TARGET: ${{ matrix.target }}
+        run: ./build.sh "${BUILD_TARGET}"
 
       - name: Upload Kernel Zip
         uses: actions/upload-artifact@v7
         with:
-          name: Kernel-Pipa-${{ matrix.branch }}-${{ github.run_number }}
+          name: Kernel-Pipa-${{ matrix.branch }}-${{ matrix.target }}-${{ github.run_number }}
           path: build-src/*.zip
           if-no-files-found: error
 
@@ -166,7 +174,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: build-error-log-${{ matrix.branch }}
+          name: build-error-log-${{ matrix.branch }}-${{ matrix.target }}
           path: build-src/error.log
 
       - name: Send Telegram notification
@@ -202,8 +210,8 @@ jobs:
             STATUS="🔴 Build Failed"
           fi
 
-          printf -v MESSAGE '%s\nRepository: <a href="%s">%s</a>\nBranch: %s\nDuration: %s\nActions: <a href="%s">#%s</a>\nCommit: <a href="%s">%s</a> %s' \
-            "$STATUS" "$REPO_URL" "$REPO" "$BRANCH" "$DURATION_FMT" "$RUN_URL" "$RUN_NUMBER" "$COMMIT_URL" "$SHORT_SHA" "$COMMIT_MSG"
+          printf -v MESSAGE '%s\nRepository: <a href="%s">%s</a>\nBranch: %s\nTarget: %s\nDuration: %s\nActions: <a href="%s">#%s</a>\nCommit: <a href="%s">%s</a> %s' \
+            "$STATUS" "$REPO_URL" "$REPO" "$BRANCH" "${{ matrix.target }}" "$DURATION_FMT" "$RUN_URL" "$RUN_NUMBER" "$COMMIT_URL" "$SHORT_SHA" "$COMMIT_MSG"
 
           if [ "${{ job.status }}" == "success" ]; then
             ZIP_FILE=$(ls build-src/*.zip 2>/dev/null | head -1)
@@ -248,11 +256,11 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           tag_name: Pipa-${{ github.run_number }}
-          name: Kernel Pipa #${{ github.run_number }}
+          name: "Kernel Pipa #${{ github.run_number }}"
           body: |
             自动构建的内核包 / Auto-built kernel zips
 
-            分支/Branches: n0-A15, n0-A16
+            分支/Branches: ${{ needs.prepare.outputs.branches }}
             构建编号/Build: #${{ github.run_number }}
             No Root/无Root
           files: artifacts/**/*.zip
