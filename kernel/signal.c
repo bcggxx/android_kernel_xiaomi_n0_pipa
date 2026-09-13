@@ -25,7 +25,6 @@
 #include <linux/tty.h>
 #include <linux/binfmts.h>
 #include <linux/coredump.h>
-#include <trace/hooks/signal.h>
 #include <linux/security.h>
 #include <linux/syscalls.h>
 #include <linux/ptrace.h>
@@ -48,6 +47,8 @@
 
 #define CREATE_TRACE_POINTS
 #include <trace/events/signal.h>
+#undef CREATE_TRACE_POINTS
+#include <trace/hooks/signal.h>
 
 #include <asm/param.h>
 #include <linux/uaccess.h>
