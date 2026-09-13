@@ -152,7 +152,7 @@ else
     #Remove incomplete directory and re-clone
     rm -rf anykernel
     msg "为 pipa 克隆 AnyKernel3 / Cloning AnyKernel3 for pipa..."
-    git clone https://github.com/bcggxx/AnyKernel3 -b n0-A17 --single-branch --depth=1 anykernel
+    git clone https://github.com/bcggxx/AnyKernel3 -b n0 --single-branch --depth=1 anykernel
 fi
 
 #6.开始编译 / Start compilation
