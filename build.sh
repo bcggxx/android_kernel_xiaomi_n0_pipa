@@ -156,8 +156,8 @@ else
 fi
 
 #6.开始编译 / Start compilation
-msg "为 PIPA 配置 (pipa_defconfig) / Configuring for PIPA (pipa_defconfig)..."
-make $MAKE_ARGS pipa_defconfig
+msg "为 PIPA 配置 ($DEFCONFIG) / Configuring for PIPA ($DEFCONFIG)..."
+make $MAKE_ARGS "$DEFCONFIG"
 
 #6.1 按内存动态计算并行度 / Compute parallelism based on available memory
 #本工具链启用 thin-LTO + polly，单个 clang 进程峰值约 1.5~2GB。
