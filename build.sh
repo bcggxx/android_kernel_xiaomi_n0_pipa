@@ -152,7 +152,7 @@ else
     #Remove incomplete directory and re-clone
     rm -rf anykernel
     msg "为 pipa 克隆 AnyKernel3 / Cloning AnyKernel3 for pipa..."
-    git clone https://github.com/bcggxx/AnyKernel3 -b n0-A16 --single-branch --depth=1 anykernel
+    git clone https://github.com/bcggxx/AnyKernel3 -b n0-A17 --single-branch --depth=1 anykernel
 fi
 
 #6.开始编译 / Start compilation
@@ -246,9 +246,9 @@ cd anykernel || { err "进入 anykernel 目录失败 / Failed to enter anykernel
 
 timestamp=$(date +%Y%m%d)
 if [ "$BUILD_TARGET" = "miui" ]; then
-    ZIP_FILENAME="Kernel_N0_pipa_A16_MIUI_${timestamp}.zip"
+    ZIP_FILENAME="Kernel_N0_pipa_A17_MIUI_${timestamp}.zip"
 else
-    ZIP_FILENAME="Kernel_N0_pipa_A16_AOSP_MIUI_${timestamp}.zip"
+    ZIP_FILENAME="Kernel_N0_pipa_A17_AOSP_MIUI_${timestamp}.zip"
 fi
 
 #优化 zip 参数并排除多余文件
