@@ -2,10 +2,25 @@ name: Test Kernel Build For Pipa
 
 on:
   push:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Build target (all builds both)'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - aosp
+          - miui
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.target != 'all' && fromJSON(format('["{0}"]', github.event.inputs.target))) || fromJSON('["aosp", "miui"]') }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -48,13 +63,13 @@ jobs:
 
       - name: Build Kernel (Test)
         env:
-          BUILD_TARGET: ${{ github.event.inputs.target || 'aosp' }}
+          BUILD_TARGET: ${{ matrix.target }}
         run: ./build.sh "${BUILD_TARGET}"
 
       - name: Upload Kernel Zip
         uses: actions/upload-artifact@v7
         with:
-          name: Kernel-Pipa-Test-${{ github.ref_name }}-${{ github.run_number }}
+          name: Kernel-Pipa-Test-${{ github.ref_name }}-${{ matrix.target }}-${{ github.run_number }}
           path: '*.zip'
           if-no-files-found: error
 
@@ -62,7 +77,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: test-error-log-${{ github.ref_name }}
+          name: test-error-log-${{ github.ref_name }}-${{ matrix.target }}
           path: error.log
 
       - name: Send Telegram notification
@@ -99,8 +114,8 @@ jobs:
             STATUS="🔴 Build Failed"
           fi
 
-          printf -v MESSAGE '%s\nRepository: <a href="%s">%s</a>\nBranch: %s\nDuration: %s\nActions: <a href="%s">#%s</a>\nCommit: <a href="%s">%s</a> %s\nCommitter: %s' \
-            "$STATUS" "$REPO_URL" "$REPO" "$BRANCH" "$DURATION_FMT" "$RUN_URL" "$RUN_NUMBER" "$COMMIT_URL" "$SHORT_SHA" "$COMMIT_MSG" "$ACTOR"
+          printf -v MESSAGE '%s\nRepository: <a href="%s">%s</a>\nBranch: %s\nTarget: %s\nDuration: %s\nActions: <a href="%s">#%s</a>\nCommit: <a href="%s">%s</a> %s\nCommitter: %s' \
+            "$STATUS" "$REPO_URL" "$REPO" "$BRANCH" "${{ matrix.target }}" "$DURATION_FMT" "$RUN_URL" "$RUN_NUMBER" "$COMMIT_URL" "$SHORT_SHA" "$COMMIT_MSG" "$ACTOR"
 
           if [ "${{ job.status }}" == "success" ]; then
             ZIP_FILE=$(ls *.zip 2>/dev/null | head -1)
