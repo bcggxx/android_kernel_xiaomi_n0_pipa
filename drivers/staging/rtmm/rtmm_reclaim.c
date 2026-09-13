@@ -25,6 +25,8 @@
 #include <linux/version.h>
 #include <linux/sched/mm.h>
 #include <linux/sched/types.h>
+#include <linux/mmap_lock.h>
+#include <linux/pagewalk.h>
 
 #define MB_TO_PAGES(m)  ((m) << (20 - PAGE_SHIFT))
 #define PAGES_TO_MB(p)   ((p) >> (20 - PAGE_SHIFT))
@@ -161,6 +163,10 @@ out:
 }
 
 #ifdef CONFIG_PROCESS_RECLAIM
+static const struct mm_walk_ops rtmm_reclaim_walk_ops = {
+	.pmd_entry = reclaim_pte_range,
+};
+
 static struct task_struct *find_get_task_by_pid(pid_t pid)
 {
 	struct task_struct *p;
@@ -180,7 +186,6 @@ static int mem_process_reclaim(pid_t pid, int type, int nr_to_reclaim)
 	struct task_struct *task;
 	struct mm_struct *mm;
 	struct vm_area_struct *vma;
-	struct mm_walk reclaim_walk = {};
 	struct reclaim_param rp;
 	int ret = 0;
 
@@ -194,13 +199,9 @@ static int mem_process_reclaim(pid_t pid, int type, int nr_to_reclaim)
 		goto out;
 	}
 
-	reclaim_walk.mm = mm;
-	reclaim_walk.pmd_entry = reclaim_pte_range;
-
 	rp.nr_scanned = 0;
 	rp.nr_to_reclaim = nr_to_reclaim;
 	rp.nr_reclaimed = 0;
-	reclaim_walk.private = &rp;
 
 	mmap_read_lock(mm);
 
@@ -215,8 +216,8 @@ static int mem_process_reclaim(pid_t pid, int type, int nr_to_reclaim)
 			continue;
 
 		rp.vma = vma;
-		ret = walk_page_range(vma->vm_start, vma->vm_end,
-				      &reclaim_walk);
+		ret = walk_page_range(mm, vma->vm_start, vma->vm_end,
+				      &rtmm_reclaim_walk_ops, &rp);
 		if (ret)
 			break;
 	}
