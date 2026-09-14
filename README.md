@@ -70,7 +70,7 @@
 
 | 内核分支 | AnyKernel3 分支 | supported.versions | 产物命名 |
 |---|---|---|---|
-| `n0-A15` | `n0-A15` | 不限 | `Kernel_N0_pipa_A15_below_AOSP_HyperOS_*` |
+| `n0-A15` | `n0-A15` | 不限 | `Kernel_N0_pipa_A15_below_AOSP_MIUI_*` |
 | `n0-A16` | `n0-A16` | 16 | `Kernel_N0_pipa_A16_AOSP_HyperOS_*` |
 | `n0` | `n0` | 不限 | `Kernel_N0_pipa_A17_below_AOSP_HyperOS_*`（AOSP）<br>`Kernel_N0_pipa_A17_below_HyperOS_*`（HyperOS） |
 
