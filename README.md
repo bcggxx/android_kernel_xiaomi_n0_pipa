@@ -59,7 +59,7 @@
 |---|---|---|
 | `n0-A15`（默认） | ✅ 稳定 | 面向 Android 15 及以下系统 |
 | `n0-A16` | ✅ 稳定 | 面向 Android 16 系统 |
-| `n0` | 🧪 测试 | Android 16 / 17 共用新特性主线（含 BPF JIT 现代化、clone3、CAP_CHECKPOINT_RESTORE、vendor hooks、hwconf_manager 等），提供 AOSP 与 MIUI/HyperOS 两个版本 |
+| `n0` | 🧪 测试 | Android 16 / 17 共用新特性主线（含 BPF JIT 现代化、clone3、CAP_CHECKPOINT_RESTORE、vendor hooks 等），提供 AOSP 与 HyperOS 两个版本 |
 
 > [!NOTE]
 > `n0` 为测试分支，功能最新但稳定性有待验证；`n0-A15` / `n0-A16` 为稳定分支，推荐日常使用。
@@ -70,12 +70,12 @@
 
 | 内核分支 | AnyKernel3 分支 | supported.versions | 产物命名 |
 |---|---|---|---|
-| `n0-A15` | `n0-A15` | 不限 | `Kernel_N0_pipa_A15_below_AOSP_MIUI_*` |
-| `n0-A16` | `n0-A16` | 16 | `Kernel_N0_pipa_A16_AOSP_MIUI_*` |
-| `n0` | `n0` | 不限 | `Kernel_N0_pipa_A17_AOSP_MIUI_*`（AOSP）<br>`Kernel_N0_pipa_A17_MIUI_*`（MIUI/HyperOS） |
+| `n0-A15` | `n0-A15` | 不限 | `Kernel_N0_pipa_A15_below_AOSP_HyperOS_*` |
+| `n0-A16` | `n0-A16` | 16 | `Kernel_N0_pipa_A16_AOSP_HyperOS_*` |
+| `n0` | `n0` | 不限 | `Kernel_N0_pipa_A17_below_AOSP_HyperOS_*`（AOSP）<br>`Kernel_N0_pipa_A17_below_HyperOS_*`（HyperOS） |
 
 > [!TIP]
-> 若 AnyKernel3 分支设置了 `supported.versions`，刷机时会校验系统版本，防止刷错包；未设置（不限）时不做校验。`n0` 分支在 CI 中会同时构建 AOSP 与 MIUI/HyperOS 两个版本。
+> 若 AnyKernel3 分支设置了 `supported.versions`，刷机时会校验系统版本，防止刷错包；未设置（不限）时不做校验。`n0` 分支在 CI 中会同时构建 AOSP 与 HyperOS 两个版本。
 
 ## ⚙️ ReKernel 使用说明
 
@@ -96,7 +96,7 @@
 
 > [!NOTE]
 > **Build Kernel For Pipa** 工作流选项说明：
-> - `build_n0_a15` / `build_n0_a16` / `build_n0`：选择要编译的分支；`n0` 会同时构建 AOSP 与 MIUI/HyperOS 两个版本
+> - `build_n0_a15` / `build_n0_a16` / `build_n0`：选择要编译的分支；`n0` 会同时构建 AOSP 与 HyperOS 两个版本
 > - `enable_droidspaces`：集成 Droidspaces（容器支持）
 > - `enable_rekernel`：集成 ReKernel（墓碑支持）
 > - `publish_release`：构建成功后发布 Release（勾选后需至少选择一个分支）

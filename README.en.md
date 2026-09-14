@@ -59,7 +59,7 @@ A non-GKI kernel build project based on the **Xiaomi SM8250** platform, integrat
 |---|---|---|
 | `n0-A15` (default) | ✅ Stable | For Android 15 and below |
 | `n0-A16` | ✅ Stable | For Android 16 |
-| `n0` | 🧪 Testing | Shared cutting-edge line for Android 16 / 17 (modernized BPF JIT, clone3, CAP_CHECKPOINT_RESTORE, vendor hooks, hwconf_manager, etc.), shipped in both AOSP and MIUI/HyperOS flavors |
+| `n0` | 🧪 Testing | Shared cutting-edge line for Android 16 / 17 (modernized BPF JIT, clone3, CAP_CHECKPOINT_RESTORE, vendor hooks, etc.), shipped in both AOSP and HyperOS flavors |
 
 > [!NOTE]
 > `n0` is the testing branch — newest features, stability still under validation. `n0-A15` / `n0-A16` are stable branches recommended for daily use.
@@ -70,12 +70,12 @@ The build script (`build.sh`) clones the matching AnyKernel3 branch ([bcggxx/Any
 
 | Kernel Branch | AnyKernel3 Branch | supported.versions | Output Name |
 |---|---|---|---|
-| `n0-A15` | `n0-A15` | Unrestricted | `Kernel_N0_pipa_A15_below_AOSP_MIUI_*` |
-| `n0-A16` | `n0-A16` | 16 | `Kernel_N0_pipa_A16_AOSP_MIUI_*` |
-| `n0` | `n0` | Unrestricted | `Kernel_N0_pipa_A17_AOSP_MIUI_*` (AOSP)<br>`Kernel_N0_pipa_A17_MIUI_*` (MIUI/HyperOS) |
+| `n0-A15` | `n0-A15` | Unrestricted | `Kernel_N0_pipa_A15_below_AOSP_HyperOS_*` |
+| `n0-A16` | `n0-A16` | 16 | `Kernel_N0_pipa_A16_AOSP_HyperOS_*` |
+| `n0` | `n0` | Unrestricted | `Kernel_N0_pipa_A17_below_AOSP_HyperOS_*` (AOSP)<br>`Kernel_N0_pipa_A17_below_HyperOS_*` (HyperOS) |
 
 > [!TIP]
-> If an AnyKernel3 branch sets `supported.versions`, the Android version is verified during flashing to prevent flashing the wrong package; when unset (unrestricted), no check is performed.
+> If an AnyKernel3 branch sets `supported.versions`, the Android version is verified during flashing to prevent flashing the wrong package; when unset (unrestricted), no check is performed. The `n0` branch builds both the AOSP and HyperOS flavors in CI.
 
 ## ⚙️ ReKernel Usage Notes
 
@@ -96,7 +96,7 @@ To compile a kernel without Root, simply fork this repository and run it via Act
 
 > [!NOTE]
 > **Build Kernel For Pipa** workflow inputs:
-> - `build_n0_a15` / `build_n0_a16` / `build_n0`: select the branch(es) to build; `n0` builds both the AOSP and MIUI/HyperOS flavors
+> - `build_n0_a15` / `build_n0_a16` / `build_n0`: select the branch(es) to build; `n0` builds both the AOSP and HyperOS flavors
 > - `enable_droidspaces`: integrate Droidspaces (container support)
 > - `enable_rekernel`: integrate ReKernel (tombstone support)
 > - `publish_release`: publish a Release after a successful build (requires at least one branch selected)
