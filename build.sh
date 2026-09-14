@@ -246,9 +246,9 @@ cd anykernel || { err "进入 anykernel 目录失败 / Failed to enter anykernel
 
 timestamp=$(date +%Y%m%d)
 if [ "$BUILD_TARGET" = "miui" ]; then
-    ZIP_FILENAME="Kernel_N0_pipa_A17_MIUI_${timestamp}.zip"
+    ZIP_FILENAME="Kernel_N0_pipa_A17_below_HyperOS_${timestamp}.zip"
 else
-    ZIP_FILENAME="Kernel_N0_pipa_A17_AOSP_MIUI_${timestamp}.zip"
+    ZIP_FILENAME="Kernel_N0_pipa_A17_below_AOSP_HyperOS_${timestamp}.zip"
 fi
 
 #优化 zip 参数并排除多余文件
