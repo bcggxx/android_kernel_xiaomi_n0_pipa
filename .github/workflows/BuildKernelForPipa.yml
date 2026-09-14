@@ -14,7 +14,7 @@ on:
         type: boolean
         default: true
       build_n0:
-        description: '编译 n0 分支（AOSP + MIUI 两个版本）/ Build n0 branch (both AOSP and MIUI)'
+        description: '编译 n0 分支（AOSP + HyperOS 两个版本）/ Build n0 branch (both AOSP and HyperOS)'
         required: true
         type: boolean
         default: false
@@ -252,16 +252,35 @@ jobs:
         with:
           path: artifacts
 
+      - name: Generate release notes
+        run: |
+          {
+            echo "## 🚀 自动构建的内核包 / Auto-built Kernel Zips"
+            echo
+            echo "本仓库内核源码保持纯净，以下产物均为 **无 Root** 版本。"
+            echo
+            echo "These builds come from a **clean kernel source without Root**."
+            echo
+            echo "| 项目 / Item | 内容 / Details |"
+            echo "| :--- | :--- |"
+            echo "| 🌿 分支 / Branches | \`${{ needs.prepare.outputs.branches }}\` |"
+            echo "| 🔢 构建编号 / Build | #${{ github.run_number }} |"
+            echo "| 🧩 产物 / Artifacts | zip 刷机包（见 Assets）/ Flashable zips (see Assets) |"
+            echo
+            echo "### 📥 刷机包列表 / Flashable Zips"
+            echo
+            find artifacts -name '*.zip' -printf '- `%f`\n' | sort
+            echo
+            echo "---"
+            echo
+            echo "> 🤖 由 GitHub Actions 自动构建 / Automatically built by GitHub Actions"
+          } > release-notes.md
+
       - name: Create Release
         uses: softprops/action-gh-release@v3
         with:
           tag_name: Pipa-${{ github.run_number }}
           name: "Kernel Pipa #${{ github.run_number }}"
-          body: |
-            自动构建的内核包 / Auto-built kernel zips
-
-            分支/Branches: ${{ needs.prepare.outputs.branches }}
-            构建编号/Build: #${{ github.run_number }}
-            No Root/无Root
+          body_path: release-notes.md
           files: artifacts/**/*.zip
           prerelease: true
