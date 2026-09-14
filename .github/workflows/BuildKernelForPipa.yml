@@ -44,6 +44,8 @@ jobs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
       branches: ${{ steps.set-matrix.outputs.branches }}
       should_release: ${{ steps.set-matrix.outputs.should_release }}
+      rekernel: ${{ steps.set-matrix.outputs.rekernel }}
+      droidspaces: ${{ steps.set-matrix.outputs.droidspaces }}
     steps:
       - id: set-matrix
         run: |
@@ -59,6 +61,8 @@ jobs:
           fi
           echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
           echo "branches=$(echo "$MATRIX" | jq -r '[.[].branch] | unique | join(", ")')" >> $GITHUB_OUTPUT
+          echo "rekernel=${{ github.event.inputs.enable_rekernel || 'false' }}" >> $GITHUB_OUTPUT
+          echo "droidspaces=${{ github.event.inputs.enable_droidspaces || 'false' }}" >> $GITHUB_OUTPUT
 
           if [ "${{ github.event.inputs.publish_release }}" == "true" ] && [ "$MATRIX" != "[]" ]; then
             echo "should_release=true" >> $GITHUB_OUTPUT
@@ -253,7 +257,15 @@ jobs:
           path: artifacts
 
       - name: Generate release notes
+        env:
+          REKERNEL_ENABLED: ${{ needs.prepare.outputs.rekernel }}
+          DROIDSPACES_ENABLED: ${{ needs.prepare.outputs.droidspaces }}
         run: |
+          REPO_URL="${{ github.server_url }}/${{ github.repository }}"
+          WORKFLOW_URL="$REPO_URL/actions/workflows/BuildKernelForPipa.yml"
+          README_URL="$REPO_URL/blob/${{ github.ref_name }}/README.md"
+          README_EN_URL="$REPO_URL/blob/${{ github.ref_name }}/README.en.md"
+
           {
             echo "## 🚀 自动构建的内核包 / Auto-built Kernel Zips"
             echo
@@ -266,6 +278,55 @@ jobs:
             echo "| 🌿 分支 / Branches | \`${{ needs.prepare.outputs.branches }}\` |"
             echo "| 🔢 构建编号 / Build | #${{ github.run_number }} |"
             echo "| 🧩 产物 / Artifacts | zip 刷机包（见 Assets）/ Flashable zips (see Assets) |"
+            echo
+            echo "### 🧱 集成状态 / Integration Status"
+            echo
+            echo "| 组件 / Component | 状态 / Status |"
+            echo "| :--- | :--- |"
+            if [ "$REKERNEL_ENABLED" == "true" ]; then
+              echo "| 🪦 ReKernel（墓碑 / tombstone） | ✅ 已集成 / Included |"
+            else
+              echo "| 🪦 ReKernel（墓碑 / tombstone） | ❌ 未集成 / Not included |"
+            fi
+            if [ "$DROIDSPACES_ENABLED" == "true" ]; then
+              echo "| 📦 Droidspaces（容器 / containers） | ✅ 已集成 / Included |"
+            else
+              echo "| 📦 Droidspaces（容器 / containers） | ❌ 未集成 / Not included |"
+            fi
+            echo
+            echo "### 📖 使用指引 / Usage Guide"
+            echo
+            if [ "$REKERNEL_ENABLED" == "true" ]; then
+              echo "**🪦 ReKernel：已集成 / Included**"
+              echo
+              echo "- 想用：先在 **NoActive 等软件的高级设置** 中将 NetLink 手动设为 \`22\`，否则不会生效；详见 [README「ReKernel 使用说明」]($README_URL) / [EN]($README_EN_URL)。"
+              echo "- 不想用：无需任何操作，可直接忽略。"
+              echo "- Want it: set NetLink to \`22\` in **NoActive**-like apps, otherwise it will not work; see the [README]($README_EN_URL)."
+              echo "- Not needed: nothing to do, just ignore it."
+            else
+              echo "**🪦 ReKernel：未集成 / Not included**"
+              echo
+              echo "- 想用：重新运行 [Build Kernel For Pipa]($WORKFLOW_URL) 并勾选 \`enable_rekernel\` 后重新构建；详见 [README「ReKernel 使用说明」]($README_URL) / [EN]($README_EN_URL)。"
+              echo "- 不想用：无需任何操作。"
+              echo "- Want it: re-run [Build Kernel For Pipa]($WORKFLOW_URL) with \`enable_rekernel\` checked; see the [README]($README_EN_URL)."
+              echo "- Not needed: nothing to do."
+            fi
+            echo
+            if [ "$DROIDSPACES_ENABLED" == "true" ]; then
+              echo "**📦 Droidspaces：已集成 / Included**"
+              echo
+              echo "- 想用：容器支持已内置，可直接使用；详见 [README「Build Kernel For Pipa 工作流选项说明」]($README_URL) / [EN]($README_EN_URL)。"
+              echo "- 不想用：无需任何操作，可直接忽略。"
+              echo "- Want it: container support is ready to use; see the [README]($README_EN_URL)."
+              echo "- Not needed: nothing to do, just ignore it."
+            else
+              echo "**📦 Droidspaces：未集成 / Not included**"
+              echo
+              echo "- 想用：重新运行 [Build Kernel For Pipa]($WORKFLOW_URL) 并勾选 \`enable_droidspaces\` 后重新构建；详见 [README「Build Kernel For Pipa 工作流选项说明」]($README_URL) / [EN]($README_EN_URL)。"
+              echo "- 不想用：无需任何操作。"
+              echo "- Want it: re-run [Build Kernel For Pipa]($WORKFLOW_URL) with \`enable_droidspaces\` checked; see the [README]($README_EN_URL)."
+              echo "- Not needed: nothing to do."
+            fi
             echo
             echo "### 📥 刷机包列表 / Flashable Zips"
             echo
