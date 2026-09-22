@@ -20,7 +20,7 @@ static ssize_t func_dummy_write(struct file *file,
 	return count;
 }
 
-static const struct file_operations os3_dummy_fops = {
+static const struct proc_ops os3_dummy_fops = {
 	.owner = THIS_MODULE,
 	.open = func_dummy_open,
 	.read = seq_read,
