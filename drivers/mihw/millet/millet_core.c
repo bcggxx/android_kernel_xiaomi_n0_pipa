@@ -345,7 +345,7 @@ static ssize_t millet_stat_write(struct file *filp,
 	return count;
 }
 
-static const struct file_operations millet_proc_fops = {
+static const struct proc_ops millet_proc_fops = {
 	.open   = millet_stat_open,
 	.read   = seq_read,
 	.write   = millet_stat_write,
@@ -365,7 +365,7 @@ static int millet_version_open(struct inode *inode, struct file *file)
 	return single_open(file, millet_version_show, NULL);
 }
 
-static const struct file_operations millet_version_fops = {
+static const struct proc_ops millet_version_fops = {
 	.open   = millet_version_open,
 	.read   = seq_read,
 	.llseek   = seq_lseek,
