@@ -21,12 +21,11 @@ static ssize_t func_dummy_write(struct file *file,
 }
 
 static const struct proc_ops os3_dummy_fops = {
-	.owner = THIS_MODULE,
-	.open = func_dummy_open,
-	.read = seq_read,
-	.write = func_dummy_write,
-	.llseek = seq_lseek,
-	.release = single_release,
+	.proc_open    = func_dummy_open,
+	.proc_read    = seq_read,
+	.proc_write   = func_dummy_write,
+	.proc_lseek   = seq_lseek,
+	.proc_release = single_release,
 };
 
 static int __init moon_func_os3_init(void)

@@ -54,7 +54,16 @@ jobs:
       - name: Install AOSP-Clang
         run: |
           mkdir -p ${{ github.workspace }}/clang
-          wget -c --tries=10 --waitretry=5 --retry-on-host-error --retry-connrefused -O clang.tar.gz "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/mirror-goog-main-llvm-toolchain-source/clang-r547379.tar.gz"
+          CLANG_URL="https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/mirror-goog-main-llvm-toolchain-source/clang-r547379.tar.gz"
+          for attempt in 1 2 3 4 5; do
+            rm -f clang.tar.gz
+            wget --tries=10 --waitretry=5 --retry-on-host-error --retry-connrefused -O clang.tar.gz "${CLANG_URL}"
+            if gzip -t clang.tar.gz; then
+              echo "clang archive passed the integrity check (attempt ${attempt})"
+              break
+            fi
+            echo "::warning::clang archive is truncated/corrupted (attempt ${attempt}), retrying..."
+          done
           tar -xzf clang.tar.gz -C ${{ github.workspace }}/clang
           echo "${{ github.workspace }}/clang/bin" >> $GITHUB_PATH
 
